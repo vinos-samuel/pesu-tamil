@@ -48,6 +48,8 @@ e.g. unit-1-greetings/01-vanakkam.m4a
 
 **Content growth loop (how Unit 6+ gets written):** no end-of-session survey (recreates "hidden homework" feeling). Instead: (1) silent automatic per-attempt logging (phrase, tier, right/wrong) as the primary signal, (2) an occasional playful in-game topic picker (not every session) to steer future unit topics, (3) a free-text "quick note" field on the parent dashboard for qualitative signal Vinos captures from real conversations with Savyr. Unit 6 onward moves to **full sentences** recombining Units 1–5 vocabulary — deliberately not pre-written; write it once Units 1–5 are live and real usage data exists.
 
+**In-app sequencing stays rule-based (decided 2026-08-07):** what Savyr sees next, and in what order, is plain SRS logic (SM-2-style — missed phrases resurface sooner) — no LLM call in the runtime loop. An LLM API (ChatGPT/Claude) is fair game as an **authoring tool** for drafting Unit 6+ candidate sentences in batches once real usage data exists, same as a human draft — but every batch gets native-speaker review before it's recorded and shipped, exactly like Units 1–5. No live/unreviewed LLM-generated content ever reaches Savyr directly. Revisit true live-adaptive generation only after v1 is dogfooded and only if batch-authoring turns out to be the bottleneck.
+
 **Explicit non-goals for v1:** script/literacy, ML personalization (rule-based only — age-band + unit sequence + simple spaced-repetition), real-time multiplayer, monetization (not being considered yet — don't raise it unprompted), native mobile app, regional Tamil variant switching.
 
 ## Data model shape (turn into real schema/migrations)
