@@ -1,77 +1,64 @@
-# v1 Recording Checklist (48 phrases)
+# v1 Recording Checklist
 
-Native-speaker audio, one phrase per file, iPhone Voice Memo (or similar) → rename to match exactly. Matches the `phrase-audio` Storage bucket layout: `unit-{n}-{slug}/{seq}-{phrase-slug}.m4a`.
+Native-speaker audio, one phrase per file, iPhone Voice Memo → `VoiceNotes/` in the Pesu Tamil master folder, named `Unit-{n}-{unit-slug}-{seq}-{phrase-slug}.m4a`.
 
-⚠️ Two items need a register decision with the native speaker before recording — see below. Also get the whole list sanity-checked for accuracy at the same pass; content is still an unreviewed draft (see [`curriculum-phrases.md`](curriculum-phrases.md)).
+**Units 2 (Family) and 4 (Numbers) need no audio at all** — text-pronunciation only, see `PRD.md`. Only Units 1, 3, 5 are listed below.
 
-## Unit 1 — Greetings & Courtesy
-| File | English | Tamil (say this) |
-|---|---|---|
-| `unit-1-greetings/01-vanakkam.m4a` | Hello | vanakkam |
-| `unit-1-greetings/02-eppadi-irukka.m4a` | How are you? (peer/cousin) | eppadi irukka? |
-| `unit-1-greetings/03-eppadi-irukkeenga.m4a` | How are you? (elder — Paati/Thatha) | eppadi irukkeenga? |
-| `unit-1-greetings/04-nalla-irukken.m4a` | I'm fine | nalla irukken |
-| `unit-1-greetings/05-aamaa.m4a` | Yes | aamaa |
-| `unit-1-greetings/06-illa.m4a` | No | illa |
-| `unit-1-greetings/07-nandri.m4a` | Thank you | nandri |
-| `unit-1-greetings/08-sorry.m4a` | Sorry | ⚠️ pick one: "sorry" (borrowed) or *mannikkanum* (formal) |
-| `unit-1-greetings/09-poyttu-varen.m4a` | Goodbye | poyttu varen |
-| `unit-1-greetings/10-iravu-vanakkam.m4a` | Good night | iravu vanakkam |
+## Unit 1 — Greetings & Courtesy — ✅ 10/11 recorded
+| File | English | Tamil | Status |
+|---|---|---|---|
+| `Unit-1-greetings-01-vanakkam.m4a` | Hello | vanakkam | ✅ |
+| `Unit-1-greetings-02-eppadi-irukka.m4a` | How are you? (peer/cousin) | eppadi irukka? | ✅ |
+| `Unit-1-greetings-03-eppadi-irukkeenga.m4a` | How are you? (elder) | eppadi irukkeenga? | ✅ |
+| `Unit-1-greetings-04-nalla-irukken.m4a` | I'm fine | nalla irukken | ✅ |
+| `Unit-1-greetings-05-aamaa.m4a` | Yes | aamaa | ✅ |
+| `Unit-1-greetings-06-illa.m4a` | No | illa | ✅ |
+| `Unit-1-greetings-07-nandri.m4a` | Thank you | nandri | ✅ (commonly said in English too — fine either way) |
+| `Unit-1-greetings-08-sorry.m4a` | Sorry | sorry / mannikkanum | ✅ |
+| `Unit-1-greetings-09-poyttu-varen.m4a` | Goodbye | poyttu varen | ✅ |
+| `Unit-1-greetings-10-iravu-vanakkam.m4a` | Good night | iravu vanakkam | ✅ (commonly said in English too — fine either way) |
+| `Unit-1-greetings-11-kaalai-vanakkam.m4a` | Good morning | kaalai vanakkam | ⚠️ **still to record** — commonly said in English too; confirm phrasing with native speaker first |
 
-## Unit 2 — Family & Kinship
-| File | English | Tamil |
-|---|---|---|
-| `unit-2-family/01-amma.m4a` | Mom | amma |
-| `unit-2-family/02-appa.m4a` | Dad | appa |
-| `unit-2-family/03-paati.m4a` | Grandma | paati |
-| `unit-2-family/04-thatha.m4a` | Grandpa | thatha |
-| `unit-2-family/05-anna.m4a` | Older brother | anna |
-| `unit-2-family/06-akka.m4a` | Older sister | akka |
-| `unit-2-family/07-thambi.m4a` | Younger brother | thambi |
-| `unit-2-family/08-thangachi.m4a` | Younger sister | thangachi |
-| `unit-2-family/09-mama.m4a` | Mom's brother (bonus) | mama |
-| `unit-2-family/10-athai.m4a` | Dad's sister (bonus) | athai |
+## Unit 3 — Mealtime Words — ✅ 8/11 recorded
+| File | English | Tamil | Status |
+|---|---|---|---|
+| `Unit-3-mealtime-01-pasikkudhu.m4a` | I'm hungry | pasikkudhu | ✅ |
+| `Unit-3-mealtime-02-thanni-vaenum.m4a` | I want water | thanni vaenum | ✅ |
+| `Unit-3-mealtime-03-thanni-kodu.m4a` | Give me water | thanni kodu | ✅ (renamed — was misfiled as `thanki-kodu`) |
+| `Unit-3-mealtime-04-saapadu-vaenum.m4a` | I want to eat | saapadu vaenum | ✅ (corrected from "saapida vaenum") |
+| `Unit-3-mealtime-05-rusiyaa-irukku.m4a` | Tastes good! | rusiyaa irukku | ✅ ("tastiya irukku" also fine as a spoken alt) |
+| `Unit-3-mealtime-06-kaaramaa-irukka.m4a` | Is it spicy? | kaaramaa irukka? | ✅ |
+| `Unit-3-mealtime-07-pothum.m4a` | I'm full / enough | pothum | ✅ |
+| `Unit-3-mealtime-08-innum-konjam.m4a` | A little more, please | innum konjam | ✅ |
+| `Unit-3-mealtime-09-pasika-illa.m4a` | Not hungry (opposite of #1) | pasika illa | ⚠️ **still to record** |
+| `Unit-3-mealtime-10-vaendam.m4a` | Don't want (opposite of vaenum) | vaendam | ⚠️ **still to record** |
+| `Unit-3-mealtime-11-neraya.m4a` | A lot / a lot more (opposite of konjam) | neraya | ⚠️ **still to record** |
 
-## Unit 3 — Mealtime Words
-| File | English | Tamil |
-|---|---|---|
-| `unit-3-mealtime/01-pasikkudhu.m4a` | I'm hungry | pasikkudhu |
-| `unit-3-mealtime/02-thanni-vaenum.m4a` | I want water | thanni vaenum |
-| `unit-3-mealtime/03-thanni-kodu.m4a` | Give me water | thanni kodu |
-| `unit-3-mealtime/04-saapida-vaenum.m4a` | I want to eat | saapida vaenum |
-| `unit-3-mealtime/05-rusiyaa-irukku.m4a` | Tastes good! | rusiyaa irukku |
-| `unit-3-mealtime/06-kaaramaa-irukka.m4a` | Is it spicy? | kaaramaa irukka? |
-| `unit-3-mealtime/07-pothum.m4a` | I'm full / enough | pothum |
-| `unit-3-mealtime/08-innum-konjam.m4a` | A little more, please | innum konjam |
+## Unit 5 — Action Commands & Routines — ✅ 10/16 recorded
+| File | English | Tamil | Status |
+|---|---|---|---|
+| `Unit-5-actions-01-inga-vaa.m4a` | Come here | inga vaa | ✅ |
+| `Unit-5-actions-02-ukaaru.m4a` | Sit down | ukaaru | ✅ (corrected from "utkaar") |
+| `Unit-5-actions-03-saapdu.m4a` | Eat | saapdu | ✅ |
+| `Unit-5-actions-04-enthiri.m4a` | Wake up | enthiri | ✅ (corrected from "ezhundhiru") |
+| `Unit-5-actions-05-thoongu.m4a` | Sleep | thoongu | ✅ |
+| `Unit-5-actions-06-kai-kazhuvu.m4a` | Wash your hands | kai kazhuvu | ✅ |
+| `Unit-5-actions-07-brush-pannu.m4a` | Brush your teeth | teeth brush pannu | ✅ (locked: Tanglish form) |
+| `Unit-5-actions-08-povom.m4a` | Let's go | povom | ✅ |
+| `Unit-5-actions-09-nillu.m4a` | Wait | nillu | ✅ |
+| `Unit-5-actions-10-satham-podaadhey.m4a` | Be quiet | satham podaadhey | ✅ |
+| `Unit-5-actions-11-po.m4a` | Go (opposite of "vaa") | po | ⚠️ **still to record** |
+| `Unit-5-actions-12-yenthi.m4a` | Get up (contrast with "enthiri") | yenthi | ⚠️ **still to record — spelling/meaning unconfirmed, check with native speaker first** |
+| `Unit-5-actions-13-povoma.m4a` | Shall we go? (question form of "povom") | povoma? | ⚠️ **still to record** |
+| `Unit-5-actions-14-saaptiya.m4a` | Did you eat? (question form of "saapdu") | saaptiya? | ⚠️ **still to record** |
+| `Unit-5-actions-15-nada.m4a` | Walk (related to "nillu"/"po") | nada | ⚠️ **still to record** |
+| `Unit-5-actions-16-yenga-pora.m4a` | Where are you going? | yenga pora? | ⚠️ **still to record** — first full-sentence item |
 
-## Unit 4 — Numbers 1–10
-| File | English | Tamil |
-|---|---|---|
-| `unit-4-numbers/01-onnu.m4a` | One | onnu |
-| `unit-4-numbers/02-rendu.m4a` | Two | rendu |
-| `unit-4-numbers/03-moonu.m4a` | Three | moonu |
-| `unit-4-numbers/04-naalu.m4a` | Four | naalu |
-| `unit-4-numbers/05-anju.m4a` | Five | anju |
-| `unit-4-numbers/06-aaru.m4a` | Six | aaru |
-| `unit-4-numbers/07-ezhu.m4a` | Seven | ezhu |
-| `unit-4-numbers/08-ettu.m4a` | Eight | ettu |
-| `unit-4-numbers/09-onbadhu.m4a` | Nine | onbadhu |
-| `unit-4-numbers/10-pathu.m4a` | Ten | pathu |
+## Still outstanding
+- 1 item in Unit 1, 3 in Unit 3, 6 in Unit 5 — **10 clips total**.
+- The "yenthi" item needs a native-speaker check on spelling/meaning before recording, not just a read-through.
+- Full native-speaker accuracy/register review of everything (including what's already recorded) is still pending — nothing here is final-reviewed yet, per `curriculum-phrases.md`.
 
-## Unit 5 — Action Commands & Routines
-| File | English | Tamil |
-|---|---|---|
-| `unit-5-actions/01-inga-vaa.m4a` | Come here | inga vaa |
-| `unit-5-actions/02-utkaar.m4a` | Sit down | utkaar |
-| `unit-5-actions/03-saapdu.m4a` | Eat | saapdu |
-| `unit-5-actions/04-ezhundhiru.m4a` | Wake up | ezhundhiru |
-| `unit-5-actions/05-thoongu.m4a` | Sleep | thoongu |
-| `unit-5-actions/06-kai-kazhuvu.m4a` | Wash your hands | kai kazhuvu |
-| `unit-5-actions/07-brush-pannu.m4a` | Brush your teeth | ⚠️ pick one: "teeth" brush pannu (Tanglish) or formal *pல் thei* |
-| `unit-5-actions/08-povom.m4a` | Let's go | povom |
-| `unit-5-actions/09-nillu.m4a` | Wait | nillu |
-| `unit-5-actions/10-satham-podaadhey.m4a` | Be quiet | satham podaadhey |
+## Once fully recorded
 
-## Once recorded
-
-Files can land locally (tell Claude where) or get uploaded directly to the `phrase-audio` bucket in the Supabase project (`pesu-tamil`, dashboard: https://supabase.com/dashboard/project/zsksmbcdutyojdcvfghd) — either works, just say which.
+Files can land locally (already the case — `VoiceNotes/` in the Pesu Tamil master folder) or get uploaded directly to the `phrase-audio` bucket in the Supabase project (`pesu-tamil`, dashboard: https://supabase.com/dashboard/project/zsksmbcdutyojdcvfghd). Either works — say which when ready and Claude will handle the upload + `audio_path` wiring.

@@ -48,6 +48,10 @@ e.g. unit-1-greetings/01-vanakkam.m4a
 
 **Content growth loop (how Unit 6+ gets written):** no end-of-session survey (recreates "hidden homework" feeling). Instead: (1) silent automatic per-attempt logging (phrase, tier, right/wrong) as the primary signal, (2) an occasional playful in-game topic picker (not every session) to steer future unit topics, (3) a free-text "quick note" field on the parent dashboard for qualitative signal Vinos captures from real conversations with Savyr. Unit 6 onward moves to **full sentences** recombining Units 1–5 vocabulary — deliberately not pre-written; write it once Units 1–5 are live and real usage data exists.
 
+**Audio is not required for every unit (decided 2026-08-09):** Units 1, 3, 5 get real native-speaker recordings. Units 2 (Family & Kinship) and 4 (Numbers) skip audio entirely — the terms are common/simple enough to teach as English-spelled Tamil pronunciation text instead of a recording. `phrases.needs_audio` carries this per-item. Assumption, not yet confirmed with Vinos: the creature-taming mechanic still applies to every phrase including audio-free ones — the Learn tier just shows pronunciation text instead of a play button for `needs_audio = false` phrases, rather than dropping the creature/game loop for those units.
+
+**Contrast pairs as a teaching device (decided 2026-08-09):** wherever a phrase has a natural opposite, negative, or question form (vaenum/vaendam, pasikkudhu/pasika illa, vaa/po, povom/povoma?, saapdu/saaptiya?), it's called out explicitly in content notes and the two items are taught close together. This stays authoring-side scaffolding, not in-app grammar lecture — no UI copy ever says "question particle" or "negation," per the existing "no grammar terminology" non-goal. The pairing itself, through usage and repetition, is the lesson. See `curriculum-phrases.md` for the full set.
+
 **In-app sequencing stays rule-based (decided 2026-08-07):** what Savyr sees next, and in what order, is plain SRS logic (SM-2-style — missed phrases resurface sooner) — no LLM call in the runtime loop. An LLM API (ChatGPT/Claude) is fair game as an **authoring tool** for drafting Unit 6+ candidate sentences in batches once real usage data exists, same as a human draft — but every batch gets native-speaker review before it's recorded and shipped, exactly like Units 1–5. No live/unreviewed LLM-generated content ever reaches Savyr directly. Revisit true live-adaptive generation only after v1 is dogfooded and only if batch-authoring turns out to be the bottleneck.
 
 **Explicit non-goals for v1:** script/literacy, ML personalization (rule-based only — age-band + unit sequence + simple spaced-repetition), real-time multiplayer, monetization (not being considered yet — don't raise it unprompted), native mobile app, regional Tamil variant switching.
@@ -55,7 +59,7 @@ e.g. unit-1-greetings/01-vanakkam.m4a
 ## Data model shape (turn into real schema/migrations)
 
 - `profiles` — one row per kid, no auth, selected via "who's playing?"
-- `units`, `phrases` — content, tagged by unit/tier/age-band; phrase has an audio file reference in Supabase Storage
+- `units`, `phrases` — content, tagged by unit/tier/age-band; phrase has an audio file reference in Supabase Storage (`needs_audio` flags which phrases skip audio — see Units 2 & 4 decision above)
 - `creatures` — linked to phrases: species/color/level
 - `attempts` — per-rep log: profile, phrase, tier, correct/incorrect, timestamp
 - `progress` — derived per profile: streak, XP, mastery/SRS state per phrase, creatures unlocked

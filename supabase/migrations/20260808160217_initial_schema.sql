@@ -34,7 +34,8 @@ create table phrases (
   english text not null,
   tamil_romanized text not null, -- internal reference only, never shown to the learner
   audio_path text, -- Storage object path, e.g. unit-1-greetings/01-vanakkam.m4a
-  notes text, -- register flags etc. (dev-only, e.g. "confirm register")
+  needs_audio boolean not null default true, -- false for units taught as text-pronunciation only (no native recording), e.g. Units 2 & 4
+  notes text, -- register flags, alt phrasing, contrast/opposite/question-form callouts (dev-only, never shown verbatim to the learner)
   created_at timestamptz not null default now(),
   unique (unit_id, seq)
 );
