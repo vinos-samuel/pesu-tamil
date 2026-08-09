@@ -36,6 +36,7 @@ create table phrases (
   audio_path text, -- Storage object path, e.g. unit-1-greetings/01-vanakkam.m4a
   needs_audio boolean not null default true, -- false for units taught as text-pronunciation only (no native recording), e.g. Units 2 & 4
   notes text, -- register flags, alt phrasing, contrast/opposite/question-form callouts (dev-only, never shown verbatim to the learner)
+  paired_phrase_id uuid references phrases(id), -- links a phrase to its one clearest contrast partner (e.g. saapdu <-> saapidunga) for quiz-style comprehension checks; not used for every contrast, only the clean 1:1 ones -- see docs/curriculum-phrases.md
   created_at timestamptz not null default now(),
   unique (unit_id, seq)
 );
@@ -74,6 +75,19 @@ create table progress (
   unique (profile_id, phrase_id)
 );
 
+-- Short text callouts (register, pronunciation, grammar-pattern nuance) --
+-- plain language only, never grammar jargon in the wording (matches the
+-- "no grammar terminology" non-goal). Attached to a specific phrase where
+-- relevant so the app can surface it right when that phrase comes up.
+create table tips (
+  id uuid primary key default gen_random_uuid(),
+  unit_id uuid references units(id) on delete set null,
+  phrase_id uuid references phrases(id) on delete set null,
+  title text not null,
+  body text not null,
+  created_at timestamptz not null default now()
+);
+
 create index attempts_profile_id_idx on attempts (profile_id);
 create index attempts_phrase_id_idx on attempts (phrase_id);
 create index progress_profile_id_idx on progress (profile_id);
@@ -87,6 +101,7 @@ alter table phrases enable row level security;
 alter table creatures enable row level security;
 alter table attempts enable row level security;
 alter table progress enable row level security;
+alter table tips enable row level security;
 
 create policy "anon full access" on profiles for all to anon using (true) with check (true);
 create policy "anon full access" on units for all to anon using (true) with check (true);
@@ -94,3 +109,4 @@ create policy "anon full access" on phrases for all to anon using (true) with ch
 create policy "anon full access" on creatures for all to anon using (true) with check (true);
 create policy "anon full access" on attempts for all to anon using (true) with check (true);
 create policy "anon full access" on progress for all to anon using (true) with check (true);
+create policy "anon full access" on tips for all to anon using (true) with check (true);

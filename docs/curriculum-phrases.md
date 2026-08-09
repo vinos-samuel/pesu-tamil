@@ -6,6 +6,8 @@
 
 **Contrast/callout policy (locked 2026-08-09):** wherever a phrase has a natural opposite, negative, question form, or commonly-confused pair, call it out in the phrase's `notes` — statement, e.g. "opposite of X" or "question form of Y." This is authoring-side scaffolding only; in-app copy still never uses grammar terminology (no "this is a negation suffix") — the pairing itself, taught through usage and repetition, is the lesson. Savyr and future learners here are old enough for this kind of pattern-noticing (same instinct that helps with Mandarin, etc.) — we're just feeding it via contrast, not lecture.
 
+**Tips (added 2026-08-09):** a small `tips` table holds short plain-language callouts (register, pronunciation, grammar-pattern nuance) attached to a specific phrase — same jargon-free rule as everything else. Two phrases get a real `paired_phrase_id` link (not just a text note) so the app can quiz on them directly rather than just displaying them side by side: *saapdu* ↔ *saapidunga* (respect register) and *satham podaadhey* ↔ *azhaadhey* (negative imperative). This linking is deliberately not applied to every existing contrast pair — most of them (vaenum/vaendam, pothum/konjam/neraya, etc.) involve more than two related items, which doesn't fit a single 1:1 link cleanly; those stay as text notes, which already do the job.
+
 ## Unit 1 — Greetings & Courtesy (11 — audio ✅ all recorded)
 1. Hello — *vanakkam*
 2. How are you? (peer/cousin) — *eppadi irukka?*
@@ -19,7 +21,7 @@
 10. Good night — *iravu vanakkam* — commonly said in English even at home; Tamil optional, either is fine
 11. Good morning — *kaalai vanakkam* ⚠️ not yet recorded, not yet native-reviewed — commonly said in English even at home; Tamil optional, either is fine
 
-## Unit 2 — Family & Kinship (14 — no audio needed, text-pronunciation only)
+## Unit 2 — Family & Kinship (16 — no audio needed, text-pronunciation only)
 1. Mom — *amma*
 2. Dad — *appa*
 3. Grandma — *paati* — also used for grandma's/grandpa's own sisters (grand-aunts), not just direct grandmother
@@ -34,8 +36,10 @@
 12. Dad's elder brother's wife (bonus) — *periyamma*
 13. Dad's younger brother (bonus) — *chitappa*
 14. Dad's younger brother's wife (bonus) — *chitti*
+15. My mom (bonus, sentence-level) — *en amma* — possessive pattern: *en* = my
+16. Your dad (bonus, sentence-level) — *un appa* — possessive pattern: *un* = your
 
-## Unit 3 — Mealtime Words (11 — audio: 8 ✅ recorded, 3 ⚠️ new, not yet recorded)
+## Unit 3 — Mealtime Words (14 — audio: 8 ✅ recorded, 6 ⚠️ new, not yet recorded)
 1. I'm hungry — *pasikkudhu* — opposite: item 9, *pasika illa*
 2. I want water — *thanni vaenum*
 3. Give me water — *thanni kodu* ⚠️ direct, not "please pass"
@@ -47,11 +51,14 @@
 9. Not hungry (bonus, contrast) — *pasika illa* ⚠️ not yet recorded — opposite of item 1, *pasikkudhu*
 10. Don't want (bonus, contrast) — *vaendam* ⚠️ not yet recorded — opposite of *vaenum* (items 2, 4)
 11. A lot / a lot more (bonus, contrast) — *neraya* ⚠️ not yet recorded — opposite of *konjam* (item 8)
+12. This (bonus) — *idhu* ⚠️ not yet recorded
+13. That (bonus) — *adhu* ⚠️ not yet recorded
+14. What is this? (bonus, sentence-level) — *idhu enna?* ⚠️ not yet recorded — pointing at food and asking what it is; builds on item 12
 
 ## Unit 4 — Numbers 1–10 (10 — no audio needed, text-pronunciation only)
 *onnu, rendu, moonu, naalu, anju, aaru, ezhu, ettu, onbadhu, pathu* — no register flags, stable across dialects.
 
-## Unit 5 — Action Commands & Routines (16 — audio: 10 ✅ recorded, 6 ⚠️ new, not yet recorded)
+## Unit 5 — Action Commands & Routines (19 — audio: 10 ✅ recorded, 9 ⚠️ new, not yet recorded)
 1. Come here — *inga vaa* — contrast: item 11, *po* (go)
 2. Sit down — *ukaaru* (corrected from earlier draft "utkaar" — Vinos has recorded this as `ukaaru`)
 3. Eat — *saapdu* — question form: item 14, *saaptiya?* (did you eat?)
@@ -68,6 +75,17 @@
 14. Did you eat? (bonus, question form) — *saaptiya?* ⚠️ not yet recorded — question form of item 3, *saapdu*
 15. Walk (bonus) — *nada* ⚠️ not yet recorded — related to item 9, *nillu*, and item 11, *po*
 16. Where are you going? (bonus, sentence-level) — *yenga pora?* ⚠️ not yet recorded — first full-sentence item, previews the Unit 6+ direction (see below)
+17. Come (respectful, to elders) (bonus) — *vaanga* ⚠️ not yet recorded — respect pattern, pairs with item 1 (*inga vaa*); has a Tip + quiz link with item 18
+18. Please eat (respectful, to elders) (bonus) — *saapidunga* ⚠️ not yet recorded — respect pattern, pairs with item 3 (*saapdu*); has a Tip + quiz link with item 3
+19. Don't cry (bonus) — *azhaadhey* ⚠️ not yet recorded — negative-imperative pattern, pairs with item 10 (*satham podaadhey*); has a Tip + quiz link with item 10
+
+## Tips (pattern callouts with a quiz link)
+
+Three tips are seeded, each attached to a specific Unit 5 phrase:
+
+1. **"Talking to elders"** (on *saapdu*, linked to *saapidunga*) — the *-nga* respect register.
+2. **"Saying 'don't'"** (on *satham podaadhey*, linked to *azhaadhey*) — the *-aadhey* negative-imperative pattern.
+3. **"The Tamil 'zh' sound"** (on *kai kazhuvu*) — ழ has no English equivalent; a pronunciation heads-up rather than a pattern pair. Apply the same treatment to any future phrase containing "zh."
 
 ## Unit 6+ (not written yet)
 

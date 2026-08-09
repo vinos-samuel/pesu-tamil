@@ -1,4 +1,4 @@
--- Seed v1 content: Units 1-5, 62 phrases total (11+14+11+10+16).
+-- Seed v1 content: Units 1-5, 70 phrases total (11+16+14+10+19).
 -- Draft, partially native-reviewed as of 2026-08-09 -- see docs/curriculum-phrases.md
 -- for the authoritative version with full annotations; this file mirrors it.
 --
@@ -36,7 +36,7 @@ from units, (values
 ) as v(seq, slug, english, tamil, notes)
 where units.slug = 'greetings';
 
--- Unit 2 -- Family & Kinship (14, all needs_audio = false, text-pronunciation only)
+-- Unit 2 -- Family & Kinship (16, all needs_audio = false, text-pronunciation only)
 insert into phrases (unit_id, seq, slug, english, tamil_romanized, needs_audio, notes)
 select id, v.seq, v.slug, v.english, v.tamil, false, v.notes
 from units, (values
@@ -53,11 +53,13 @@ from units, (values
   (11, 'periyappa', 'Dad''s elder brother (bonus)', 'periyappa', null),
   (12, 'periyamma', 'Dad''s elder brother''s wife (bonus)', 'periyamma', null),
   (13, 'chitappa', 'Dad''s younger brother (bonus)', 'chitappa', null),
-  (14, 'chitti', 'Dad''s younger brother''s wife (bonus)', 'chitti', null)
+  (14, 'chitti', 'Dad''s younger brother''s wife (bonus)', 'chitti', null),
+  (15, 'en-amma', 'My mom (bonus, sentence-level)', 'en amma', 'possessive pattern: en = my'),
+  (16, 'un-appa', 'Your dad (bonus, sentence-level)', 'un appa', 'possessive pattern: un = your')
 ) as v(seq, slug, english, tamil, notes)
 where units.slug = 'family';
 
--- Unit 3 -- Mealtime Words (11, all needs_audio = true; #1-8 recorded, #9-11 not yet)
+-- Unit 3 -- Mealtime Words (14, all needs_audio = true; #1-8 recorded, #9-14 not yet)
 insert into phrases (unit_id, seq, slug, english, tamil_romanized, needs_audio, notes)
 select id, v.seq, v.slug, v.english, v.tamil, true, v.notes
 from units, (values
@@ -71,7 +73,10 @@ from units, (values
   (8, 'innum-konjam', 'A little more, please', 'innum konjam', null),
   (9, 'pasika-illa', 'Not hungry (bonus, contrast)', 'pasika illa', 'opposite of pasikkudhu (item 1); not yet recorded'),
   (10, 'vaendam', 'Don''t want (bonus, contrast)', 'vaendam', 'opposite of vaenum (items 2, 4); not yet recorded'),
-  (11, 'neraya', 'A lot / a lot more (bonus, contrast)', 'neraya', 'opposite of konjam (item 8); not yet recorded')
+  (11, 'neraya', 'A lot / a lot more (bonus, contrast)', 'neraya', 'opposite of konjam (item 8); not yet recorded'),
+  (12, 'idhu', 'This (bonus)', 'idhu', 'not yet recorded'),
+  (13, 'adhu', 'That (bonus)', 'adhu', 'not yet recorded'),
+  (14, 'idhu-enna', 'What is this? (bonus, sentence-level)', 'idhu enna?', 'pointing at food and asking what it is; builds on idhu (item 12); not yet recorded')
 ) as v(seq, slug, english, tamil, notes)
 where units.slug = 'mealtime';
 
@@ -92,7 +97,7 @@ from units, (values
 ) as v(seq, slug, english, tamil)
 where units.slug = 'numbers';
 
--- Unit 5 -- Action Commands & Routines (16, all needs_audio = true; #1-10 recorded, #11-16 not yet)
+-- Unit 5 -- Action Commands & Routines (19, all needs_audio = true; #1-10 recorded, #11-19 not yet)
 insert into phrases (unit_id, seq, slug, english, tamil_romanized, needs_audio, notes)
 select id, v.seq, v.slug, v.english, v.tamil, true, v.notes
 from units, (values
@@ -111,9 +116,44 @@ from units, (values
   (13, 'povoma', 'Shall we go? (bonus, question form)', 'povoma?', 'question form of povom (item 8); not yet recorded'),
   (14, 'saaptiya', 'Did you eat? (bonus, question form)', 'saaptiya?', 'question form of saapdu (item 3); not yet recorded'),
   (15, 'nada', 'Walk (bonus)', 'nada', 'related to nillu (item 9), po (item 11); not yet recorded'),
-  (16, 'yenga-pora', 'Where are you going? (bonus, sentence-level)', 'yenga pora?', 'first full-sentence item, previews Unit 6+ direction; not yet recorded')
+  (16, 'yenga-pora', 'Where are you going? (bonus, sentence-level)', 'yenga pora?', 'first full-sentence item, previews Unit 6+ direction; not yet recorded'),
+  (17, 'vaanga', 'Come (respectful, to elders) (bonus)', 'vaanga', 'respect pattern: pairs with inga vaa (item 1) -- add "-nga" when speaking to elders; not yet recorded'),
+  (18, 'saapidunga', 'Please eat (respectful, to elders) (bonus)', 'saapidunga', 'respect pattern: pairs with saapdu (item 3); not yet recorded'),
+  (19, 'azhaadhey', 'Don''t cry (bonus)', 'azhaadhey', 'negative-imperative pattern: pairs with satham podaadhey (item 10) -- "-aadhey" = don''t do it; not yet recorded')
 ) as v(seq, slug, english, tamil, notes)
 where units.slug = 'actions';
+
+-- Comprehension-check pairs: link each new pattern phrase to its clearest
+-- contrast partner, for a quiz-style "which one?" check rather than a plain
+-- side-by-side display.
+update phrases set paired_phrase_id = (select id from phrases where slug = 'saapidunga')
+where slug = 'saapdu';
+update phrases set paired_phrase_id = (select id from phrases where slug = 'saapdu')
+where slug = 'saapidunga';
+
+update phrases set paired_phrase_id = (select id from phrases where slug = 'azhaadhey')
+where slug = 'satham-podaadhey';
+update phrases set paired_phrase_id = (select id from phrases where slug = 'satham-podaadhey')
+where slug = 'azhaadhey';
+
+-- Text callouts (plain language, no grammar jargon in the wording).
+insert into tips (unit_id, phrase_id, title, body)
+select u.id, p.id, 'Talking to elders',
+  'With cousins and friends: saapdu (eat), vaa (come). With Paati, Thatha, and other elders, add "-nga": saapidunga, vaanga. It''s built-in respect.'
+from units u, phrases p
+where u.slug = 'actions' and p.slug = 'saapdu';
+
+insert into tips (unit_id, phrase_id, title, body)
+select u.id, p.id, 'Saying "don''t"',
+  'Adding "-aadhey" to an action word means "don''t do it": satham podaadhey (don''t make noise), azhaadhey (don''t cry).'
+from units u, phrases p
+where u.slug = 'actions' and p.slug = 'satham-podaadhey';
+
+insert into tips (unit_id, phrase_id, title, body)
+select u.id, p.id, 'The Tamil "zh" sound',
+  'The "zh" in kazhuvu isn''t an English sound -- it''s a special Tamil letter (ழ), not quite "l" and not quite "z". Listen to the recording closely rather than sounding it out from the spelling.'
+from units u, phrases p
+where u.slug = 'actions' and p.slug = 'kai-kazhuvu';
 
 -- One creature per phrase, species by unit theme (placeholder geometry, not final art).
 insert into creatures (phrase_id, species, color, level)

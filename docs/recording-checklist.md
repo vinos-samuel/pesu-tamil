@@ -19,7 +19,7 @@ Native-speaker audio, one phrase per file, iPhone Voice Memo → `VoiceNotes/` i
 | `Unit-1-greetings-10-iravu-vanakkam.m4a` | Good night | iravu vanakkam | ✅ (commonly said in English too — fine either way) |
 | `Unit-1-greetings-11-kaalai-vanakkam.m4a` | Good morning | kaalai vanakkam | ⚠️ **still to record** — commonly said in English too; confirm phrasing with native speaker first |
 
-## Unit 3 — Mealtime Words — ✅ 8/11 recorded
+## Unit 3 — Mealtime Words — ✅ 8/14 recorded
 | File | English | Tamil | Status |
 |---|---|---|---|
 | `Unit-3-mealtime-01-pasikkudhu.m4a` | I'm hungry | pasikkudhu | ✅ |
@@ -33,8 +33,11 @@ Native-speaker audio, one phrase per file, iPhone Voice Memo → `VoiceNotes/` i
 | `Unit-3-mealtime-09-pasika-illa.m4a` | Not hungry (opposite of #1) | pasika illa | ⚠️ **still to record** |
 | `Unit-3-mealtime-10-vaendam.m4a` | Don't want (opposite of vaenum) | vaendam | ⚠️ **still to record** |
 | `Unit-3-mealtime-11-neraya.m4a` | A lot / a lot more (opposite of konjam) | neraya | ⚠️ **still to record** |
+| `Unit-3-mealtime-12-idhu.m4a` | This | idhu | ⚠️ **still to record** |
+| `Unit-3-mealtime-13-adhu.m4a` | That | adhu | ⚠️ **still to record** |
+| `Unit-3-mealtime-14-idhu-enna.m4a` | What is this? | idhu enna? | ⚠️ **still to record** |
 
-## Unit 5 — Action Commands & Routines — ✅ 10/16 recorded
+## Unit 5 — Action Commands & Routines — ✅ 10/19 recorded
 | File | English | Tamil | Status |
 |---|---|---|---|
 | `Unit-5-actions-01-inga-vaa.m4a` | Come here | inga vaa | ✅ |
@@ -53,9 +56,12 @@ Native-speaker audio, one phrase per file, iPhone Voice Memo → `VoiceNotes/` i
 | `Unit-5-actions-14-saaptiya.m4a` | Did you eat? (question form of "saapdu") | saaptiya? | ⚠️ **still to record** |
 | `Unit-5-actions-15-nada.m4a` | Walk (related to "nillu"/"po") | nada | ⚠️ **still to record** |
 | `Unit-5-actions-16-yenga-pora.m4a` | Where are you going? | yenga pora? | ⚠️ **still to record** — first full-sentence item |
+| `Unit-5-actions-17-vaanga.m4a` | Come (respectful, to elders) | vaanga | ⚠️ **still to record** — pairs with #1, tip: "Talking to elders" |
+| `Unit-5-actions-18-saapidunga.m4a` | Please eat (respectful, to elders) | saapidunga | ⚠️ **still to record** — pairs with #3, tip: "Talking to elders" |
+| `Unit-5-actions-19-azhaadhey.m4a` | Don't cry | azhaadhey | ⚠️ **still to record** — pairs with #10, tip: "Saying 'don't'" |
 
 ## Still outstanding
-- 1 item in Unit 1, 3 in Unit 3, 6 in Unit 5 — **10 clips total**.
+- 1 item in Unit 1, 6 in Unit 3, 9 in Unit 5 — **16 clips total**.
 
 ## Once fully recorded
 
