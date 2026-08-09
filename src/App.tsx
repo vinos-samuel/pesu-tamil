@@ -4,8 +4,9 @@ import { getPhrasesWithCreatures, getUnitBySlug } from "./lib/queries";
 import type { PhraseWithCreature, Profile } from "./lib/types";
 import Learn from "./screens/Learn";
 import Recognize from "./screens/Recognize";
+import SayIt from "./screens/SayIt";
 
-type Screen = "picker" | "intro" | "learn" | "recognize" | "done";
+type Screen = "picker" | "intro" | "learn" | "recognize" | "sayit" | "done";
 
 const AVATAR_COLORS = ["marigold", "teal"] as const;
 
@@ -20,7 +21,9 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>("picker");
   const [unitTitle, setUnitTitle] = useState("");
   const [phrases, setPhrases] = useState<PhraseWithCreature[]>([]);
-  const [earnedCorrect, setEarnedCorrect] = useState(0);
+  const [recognizeCorrect, setRecognizeCorrect] = useState(0);
+  const [sayItCount, setSayItCount] = useState(0);
+  const [xpGained, setXpGained] = useState(0);
 
   async function loadProfiles() {
     setLoading(true);
@@ -67,9 +70,26 @@ export default function App() {
   }
 
   async function finishRecognize(correctCount: number) {
-    setEarnedCorrect(correctCount);
+    setRecognizeCorrect(correctCount);
+    const xpGain = correctCount * 10;
+    setXpGained((prev) => prev + xpGain);
     if (profile) {
-      const xpGain = correctCount * 10;
+      await supabase
+        .from("profiles")
+        .update({ total_xp: profile.total_xp + xpGain })
+        .eq("id", profile.id);
+      setProfile({ ...profile, total_xp: profile.total_xp + xpGain });
+    }
+    setScreen("sayit");
+  }
+
+  async function finishSayIt(attemptedCount: number) {
+    // Say-it is ungraded by design (see PRD) -- flat participation XP, not
+    // tied to self-grade, and it doesn't feed SRS/progress.
+    setSayItCount(attemptedCount);
+    const xpGain = attemptedCount * 5;
+    setXpGained((prev) => prev + xpGain);
+    if (profile) {
       await supabase
         .from("profiles")
         .update({ total_xp: profile.total_xp + xpGain })
@@ -81,6 +101,9 @@ export default function App() {
   function backToPicker() {
     setProfile(null);
     setScreen("picker");
+    setRecognizeCorrect(0);
+    setSayItCount(0);
+    setXpGained(0);
     loadProfiles();
   }
 
@@ -179,6 +202,11 @@ export default function App() {
     );
   }
 
+  // -- Say-it --------------------------------------------------------------
+  if (screen === "sayit" && profile) {
+    return <SayIt phrases={phrases} profile={profile} onDone={finishSayIt} />;
+  }
+
   // -- Done ----------------------------------------------------------------
   if (screen === "done") {
     return (
@@ -187,8 +215,9 @@ export default function App() {
           Quest complete! 🎉
         </h1>
         <p className="font-body text-gray-600">
-          {earnedCorrect} / {phrases.length} correct · +{earnedCorrect * 10} XP
+          {recognizeCorrect} / {phrases.length} correct · {sayItCount} said out loud
         </p>
+        <p className="font-body text-gray-500">+{xpGained} XP</p>
         <button
           onClick={backToPicker}
           className="mt-4 rounded-full bg-teal-500 px-6 py-2 font-display text-white shadow hover:bg-teal-700"

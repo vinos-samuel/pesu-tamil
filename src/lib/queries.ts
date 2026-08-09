@@ -49,12 +49,16 @@ export async function logAttempt(params: {
   phrase_id: string;
   tier: "learn" | "recognize" | "say-it" | "build-it";
   correct?: boolean | null;
+  self_grade?: boolean | null;
+  recording_path?: string | null;
 }) {
   const { error } = await supabase.from("attempts").insert({
     profile_id: params.profile_id,
     phrase_id: params.phrase_id,
     tier: params.tier,
     correct: params.correct ?? null,
+    self_grade: params.self_grade ?? null,
+    recording_path: params.recording_path ?? null,
   });
   if (error) throw error;
 }

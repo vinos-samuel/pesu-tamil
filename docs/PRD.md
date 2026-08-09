@@ -74,6 +74,7 @@ Supabase provisioned, schema live, 69 phrases + 4 tips seeded, 43 audio files re
 ## Build order (advisor-reviewed, 2026-08-09)
 
 1. **Learn + Recognize, Unit 1 only, real audio, end to end.** ✅ Done 2026-08-09 — verified against the live database (audio fetch, `attempts` logging for both tiers, `progress` tally, `profiles.total_xp`), not just code review.
+2. **Say-it Produce.** In progress. New Storage bucket `say-it-recordings`, public — same call as `phrase-audio`: the app's whole access model is already "possession of the private URL/anon key," not per-object auth, so a second bucket with a different policy would be inconsistent complexity for no real gain at this scale. Worth revisiting only if this app ever gets a real auth layer.
 2. **Say-it Produce** (record → compare → self-grade → store blob).
 3. **Parent dashboard: recent recordings + thumbs.** This is what makes Say-it's grading honest rather than a shrug.
 4. **Build-it** word-order tier for the ~13 multi-word phrases.
