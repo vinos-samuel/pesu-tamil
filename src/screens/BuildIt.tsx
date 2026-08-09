@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { audioUrl, bumpProgress, logAttempt } from "../lib/queries";
+import { playAudio } from "../lib/playAudio";
 import {
   creatureEmoji,
   parseWordGloss,
@@ -20,10 +21,12 @@ export default function BuildIt({
   phrases,
   profile,
   onDone,
+  onExit,
 }: {
   phrases: PhraseWithCreature[]; // already filtered to Build-it-eligible
   profile: Profile;
   onDone: (correctCount: number) => void;
+  onExit: () => void;
 }) {
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<number[]>([]); // indices into `words`, in tap order
@@ -59,7 +62,7 @@ export default function BuildIt({
     const correct = finalPicked.every((wordIdx, slot) => wordIdx === slot);
     if (correct) {
       setCorrectCount((c) => c + 1);
-      if (phrase.audio_path) new Audio(audioUrl(phrase.audio_path)).play();
+      if (phrase.audio_path) playAudio(audioUrl(phrase.audio_path));
     }
     await logAttempt({
       profile_id: profile.id,
@@ -82,6 +85,13 @@ export default function BuildIt({
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-6 px-6 text-center">
+      <button
+        onClick={onExit}
+        className="absolute left-4 top-4 text-sm text-gray-400 hover:text-gray-600"
+      >
+        ← Exit
+      </button>
+
       <p className="font-body text-gray-500">
         Build-it {index + 1} / {phrases.length}
       </p>

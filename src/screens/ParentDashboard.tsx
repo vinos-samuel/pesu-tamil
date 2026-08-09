@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getRecentRecordings, setParentGrade, type RecordingRow } from "../lib/queries";
 import { audioUrl } from "../lib/queries";
 import { recordingUrl } from "../lib/recording";
+import { playAudio } from "../lib/playAudio";
 
 // Deliberate register-break (per PRD): plain data, cream/daylight palette,
 // no creatures, no game copy. Never shown to the kid.
@@ -77,7 +78,7 @@ export default function ParentDashboard({ onBack }: { onBack: () => void }) {
 
               <div className="flex shrink-0 items-center gap-2">
                 <button
-                  onClick={() => new Audio(recordingUrl(row.recording_path)).play()}
+                  onClick={() => playAudio(recordingUrl(row.recording_path))}
                   className="rounded-full bg-teal-500 px-3 py-1.5 text-sm text-white hover:bg-teal-700"
                   title="Hear the recording"
                 >
@@ -85,7 +86,7 @@ export default function ParentDashboard({ onBack }: { onBack: () => void }) {
                 </button>
                 {row.phrases?.audio_path && (
                   <button
-                    onClick={() => new Audio(audioUrl(row.phrases!.audio_path!)).play()}
+                    onClick={() => playAudio(audioUrl(row.phrases!.audio_path!))}
                     className="rounded-full bg-marigold-500 px-3 py-1.5 text-sm text-white hover:bg-marigold-700"
                     title="Hear the native recording"
                   >

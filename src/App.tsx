@@ -143,6 +143,14 @@ export default function App() {
     loadProfiles();
   }
 
+  function backToUnits() {
+    setScreen("units");
+    setRecognizeCorrect(0);
+    setSayItCount(0);
+    setBuildItCorrect(0);
+    setXpGained(0);
+  }
+
   // -- Picker --------------------------------------------------------------
   if (screen === "picker") {
     return (
@@ -216,13 +224,19 @@ export default function App() {
 
   // -- Unit picker -----------------------------------------------------------
   if (screen === "units" && profile) {
-    return <UnitPicker profile={profile} onPick={pickUnit} />;
+    return <UnitPicker profile={profile} onPick={pickUnit} onExit={backToPicker} />;
   }
 
   // -- Unit intro ------------------------------------------------------------
   if (screen === "intro") {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-6 px-6 text-center">
+        <button
+          onClick={() => setScreen("units")}
+          className="absolute left-4 top-4 text-sm text-gray-400 hover:text-gray-600"
+        >
+          ← Back
+        </button>
         <h1 className="font-display text-4xl text-teal-700">{unitTitle}</h1>
         <p className="font-body text-gray-600">
           {phrases.length} creatures are waiting to be tamed, {profile?.name}!
@@ -244,6 +258,7 @@ export default function App() {
         phrases={phrases}
         profile={profile}
         onDone={() => setScreen("recognize")}
+        onExit={backToUnits}
       />
     );
   }
@@ -251,19 +266,33 @@ export default function App() {
   // -- Recognize ---------------------------------------------------------
   if (screen === "recognize" && profile) {
     return (
-      <Recognize phrases={phrases} profile={profile} onDone={finishRecognize} />
+      <Recognize
+        phrases={phrases}
+        profile={profile}
+        onDone={finishRecognize}
+        onExit={backToUnits}
+      />
     );
   }
 
   // -- Say-it --------------------------------------------------------------
   if (screen === "sayit" && profile) {
-    return <SayIt phrases={phrases} profile={profile} onDone={finishSayIt} />;
+    return (
+      <SayIt phrases={phrases} profile={profile} onDone={finishSayIt} onExit={backToUnits} />
+    );
   }
 
   // -- Build-it --------------------------------------------------------------
   if (screen === "buildit" && profile) {
     const eligible = phrases.filter(isBuildItEligible);
-    return <BuildIt phrases={eligible} profile={profile} onDone={finishBuildIt} />;
+    return (
+      <BuildIt
+        phrases={eligible}
+        profile={profile}
+        onDone={finishBuildIt}
+        onExit={backToUnits}
+      />
+    );
   }
 
   // -- Done ----------------------------------------------------------------

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { audioUrl, bumpProgress, logAttempt } from "../lib/queries";
+import { playAudio } from "../lib/playAudio";
 import { creatureEmoji, type PhraseWithCreature, type Profile } from "../lib/types";
 
 function shuffle<T>(arr: T[]): T[] {
@@ -15,16 +16,19 @@ export default function Recognize({
   phrases,
   profile,
   onDone,
+  onExit,
 }: {
   phrases: PhraseWithCreature[];
   profile: Profile;
   onDone: (correctCount: number) => void;
+  onExit: () => void;
 }) {
   const [order] = useState(() => shuffle(phrases));
   const [index, setIndex] = useState(0);
   const [hearts, setHearts] = useState(3);
   const [correctCount, setCorrectCount] = useState(0);
-  const [picked, setPicked] = useState<string | null>(null);
+  const [previewed, setPreviewed] = useState<string | null>(null); // listened to, not yet committed
+  const [picked, setPicked] = useState<string | null>(null); // committed answer
 
   const target = order[index];
 
@@ -35,15 +39,16 @@ export default function Recognize({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target.id]);
 
-  function playOption(p: PhraseWithCreature) {
-    if (p.audio_path) new Audio(audioUrl(p.audio_path)).play();
+  function preview(p: PhraseWithCreature) {
+    if (picked) return; // already committed this question
+    setPreviewed(p.id);
+    if (p.audio_path) playAudio(audioUrl(p.audio_path));
   }
 
-  async function choose(p: PhraseWithCreature) {
-    if (picked) return; // already answered this question
-    setPicked(p.id);
-    playOption(p);
-    const correct = p.id === target.id;
+  async function confirm() {
+    if (!previewed || picked) return;
+    setPicked(previewed);
+    const correct = previewed === target.id;
     if (correct) setCorrectCount((c) => c + 1);
     else setHearts((h) => Math.max(0, h - 1));
 
@@ -59,6 +64,7 @@ export default function Recognize({
   function next() {
     if (index + 1 < order.length) {
       setIndex(index + 1);
+      setPreviewed(null);
       setPicked(null);
     } else {
       onDone(correctCount);
@@ -67,6 +73,13 @@ export default function Recognize({
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-6 px-6 text-center">
+      <button
+        onClick={onExit}
+        className="absolute left-4 top-4 text-sm text-gray-400 hover:text-gray-600"
+      >
+        ← Exit
+      </button>
+
       <p className="font-body text-gray-500">
         Recognize {index + 1} / {order.length} · {"❤️".repeat(hearts)}
         {"🤍".repeat(3 - hearts)}
@@ -75,21 +88,23 @@ export default function Recognize({
       <p className="font-display text-2xl text-teal-700">
         Which one means "{target.english}"?
       </p>
+      <p className="text-xs text-gray-400">Tap to listen, tap any as many times as you want</p>
 
       <div className="flex flex-wrap justify-center gap-5">
         {options.map((opt) => {
+          const isPreviewed = previewed === opt.id;
           const isPicked = picked === opt.id;
           const isCorrectAnswer = opt.id === target.id;
           const showResult = picked !== null;
           let ring = "";
           if (showResult && isCorrectAnswer) ring = "ring-4 ring-teal-500";
-          else if (showResult && isPicked && !isCorrectAnswer)
-            ring = "ring-4 ring-red-400";
+          else if (showResult && isPicked && !isCorrectAnswer) ring = "ring-4 ring-red-400";
+          else if (!showResult && isPreviewed) ring = "ring-4 ring-marigold-500";
 
           return (
             <button
               key={opt.id}
-              onClick={() => choose(opt)}
+              onClick={() => preview(opt)}
               className={`flex h-28 w-28 items-center justify-center rounded-3xl bg-marigold-100 text-5xl shadow transition hover:scale-105 active:scale-95 ${ring}`}
             >
               {creatureEmoji(opt.creature?.species)}
@@ -97,6 +112,16 @@ export default function Recognize({
           );
         })}
       </div>
+
+      {!picked && (
+        <button
+          onClick={confirm}
+          disabled={!previewed}
+          className="rounded-full bg-marigold-500 px-8 py-3 font-display text-white shadow disabled:opacity-30 hover:bg-marigold-700"
+        >
+          Choose this one ✓
+        </button>
+      )}
 
       {picked && (
         <div className="flex flex-col items-center gap-3">

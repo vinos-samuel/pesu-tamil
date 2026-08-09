@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { audioUrl, logAttempt } from "../lib/queries";
+import { playAudio } from "../lib/playAudio";
 import { startRecording, uploadRecording, type Recorder } from "../lib/recording";
 import { creatureEmoji, type PhraseWithCreature, type Profile } from "../lib/types";
 
@@ -9,10 +10,12 @@ export default function SayIt({
   phrases,
   profile,
   onDone,
+  onExit,
 }: {
   phrases: PhraseWithCreature[];
   profile: Profile;
   onDone: (attemptedCount: number) => void;
+  onExit: () => void;
 }) {
   const [index, setIndex] = useState(0);
   const [stage, setStage] = useState<Stage>("idle");
@@ -25,11 +28,11 @@ export default function SayIt({
   const phrase = phrases[index];
 
   function playNative() {
-    if (phrase.audio_path) new Audio(audioUrl(phrase.audio_path)).play();
+    if (phrase.audio_path) playAudio(audioUrl(phrase.audio_path));
   }
 
   function playOwn() {
-    if (ownBlob) new Audio(URL.createObjectURL(ownBlob)).play();
+    if (ownBlob) playAudio(URL.createObjectURL(ownBlob));
   }
 
   async function beginRecording() {
@@ -49,6 +52,12 @@ export default function SayIt({
     const blob = await recorder.stop();
     setOwnBlob(blob);
     setStage("recorded");
+  }
+
+  function recordAgain() {
+    setOwnBlob(null);
+    setRecorder(null);
+    setStage("idle");
   }
 
   async function grade(same: boolean, honorSystem = false) {
@@ -89,6 +98,13 @@ export default function SayIt({
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-6 px-6 text-center">
+      <button
+        onClick={onExit}
+        className="absolute left-4 top-4 text-sm text-gray-400 hover:text-gray-600"
+      >
+        ← Exit
+      </button>
+
       <p className="font-body text-gray-500">
         Say-it {index + 1} / {phrases.length}
       </p>
@@ -163,25 +179,34 @@ export default function SayIt({
                   onClick={playNative}
                   className="rounded-full bg-marigold-500 px-5 py-2 font-display text-white shadow hover:bg-marigold-700"
                 >
-                  🔊 Hear Paati
+                  🔊 Hear it in Tamil
                 </button>
               </div>
 
               {stage === "recorded" ? (
-                <div className="flex gap-3">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => grade(true)}
+                      disabled={busy}
+                      className="rounded-full bg-teal-500 px-6 py-2 font-display text-white shadow disabled:opacity-40 hover:bg-teal-700"
+                    >
+                      Same! 🎉
+                    </button>
+                    <button
+                      onClick={() => grade(false)}
+                      disabled={busy}
+                      className="rounded-full bg-white px-6 py-2 font-display text-gray-700 shadow disabled:opacity-40 hover:bg-gray-100"
+                    >
+                      Not quite
+                    </button>
+                  </div>
                   <button
-                    onClick={() => grade(true)}
+                    onClick={recordAgain}
                     disabled={busy}
-                    className="rounded-full bg-teal-500 px-6 py-2 font-display text-white shadow disabled:opacity-40 hover:bg-teal-700"
+                    className="text-sm text-gray-500 underline hover:text-gray-700 disabled:opacity-40"
                   >
-                    Same! 🎉
-                  </button>
-                  <button
-                    onClick={() => grade(false)}
-                    disabled={busy}
-                    className="rounded-full bg-white px-6 py-2 font-display text-gray-700 shadow disabled:opacity-40 hover:bg-gray-100"
-                  >
-                    Not quite -- again
+                    🎤 Record again
                   </button>
                 </div>
               ) : (

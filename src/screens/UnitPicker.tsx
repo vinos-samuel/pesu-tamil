@@ -13,9 +13,11 @@ const UNIT_EMOJI: Record<string, string> = {
 export default function UnitPicker({
   profile,
   onPick,
+  onExit,
 }: {
   profile: Profile;
   onPick: (unit: UnitWithReadiness) => void;
+  onExit: () => void;
 }) {
   const [units, setUnits] = useState<UnitWithReadiness[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +32,12 @@ export default function UnitPicker({
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-6">
+      <button
+        onClick={onExit}
+        className="absolute left-4 top-4 text-sm text-gray-400 hover:text-gray-600"
+      >
+        ← Switch player
+      </button>
       <h1 className="font-display text-4xl text-teal-700">
         Which quest, {profile.name}?
       </h1>
