@@ -20,7 +20,7 @@
 - [ ] Native-speaker audio recording of the 46 v1 phrases (iPhone Voice Memo → naming convention below)
 - [ ] Native-speaker review of the draft Tamil phrases (register/accuracy — flagged item-by-item in the phrase list)
 
-**Not started:** any app code, Supabase schema/provisioning, real audio integration.
+**In progress (started 2026-08-09):** Web/PWA app scaffold — Vite + React + TypeScript + Tailwind, Supabase client wired, festival-daylight palette in `tailwind.config.js`, Google Fonts (Baloo 2 / Mukta) loaded. First working screen: the "who's playing?" profile picker, confirmed end-to-end against the live database (create + select both verified). Not yet built: units/creatures screens, the Learn → Recognize → Produce loop, parent dashboard.
 
 ## Locked decisions — don't re-litigate these, they were deliberated at length
 
