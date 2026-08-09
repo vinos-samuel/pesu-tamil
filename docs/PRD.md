@@ -29,7 +29,10 @@
 **Game design — "Creature Tamer" skin:** correctly learning/using a phrase tames a creature. Never say "lesson/practice" in-app copy — say "quest/tame/battle." Core loop per phrase:
 - **Learn:** tap creature → hear Tamil audio → English-only caption reveals meaning after. Free, unlimited repeats.
 - **Recognize:** English prompt → pick matching Tamil audio from 2–3 options. Distractors = other phrases already taught in the same unit (no extra authoring needed). Wrong answer costs a heart, reveals correct answer, never blocks progress.
-- **Produce:** English prompt → speak into mic, or fall back to tapping an audio word-bank. Grading is deliberately generous (attempt = hit) — browser Tamil ASR isn't reliable enough to gate progress on strict accuracy.
+- **Produce (redesigned 2026-08-09, advisor-reviewed — see below):** splits into two real sub-tiers, not one mic-with-a-fallback:
+  - **Say-it** (every phrase): no ASR anywhere — record self via `MediaRecorder`, play it back immediately followed by the native recording, kid self-grades ("Same!" / "Not quite — again"). Never a hard right/wrong, never blocks progress, feedback copy never says "Correct!" (say "Nice — I heard you!" instead) — an unvarying "correct" reads as fake to a kid within a couple of sessions. The recording is stored in Storage; **the real grading happens on the parent dashboard** — a "recent recordings" list with thumbs up/down, ~60 seconds a week. Excluded from SRS scheduling (see `progress` below) since it can't produce a real wrong answer.
+  - **Build-it** (only phrases with ≥2 `word_gloss` entries, ~13 of 69): word-order tapping using the phrase's own component words. Genuinely gradable, feeds SRS same as Recognize.
+  - Web Speech API / client-side ASR is explicitly ruled out, even as an ungraded toy — child L2 speech on sub-second single words is close to a worst case for any recognizer, and a mic that returns the wrong word or nothing reads as *broken* to a 6-year-old, which is worse than not having a mic at all.
 
 **"Battle mode":** solo-first by design (beat-your-own-best/ghost-run), always available with zero other users — this was a deliberate fix for the multiplayer cold-start problem. A connected cousin upgrades it to an async score-comparison via shareable link. Never require another person to be present.
 
@@ -61,12 +64,17 @@ e.g. unit-1-greetings/01-vanakkam.m4a
 - `profiles` — one row per kid, no auth, selected via "who's playing?"
 - `units`, `phrases` — content, tagged by unit/tier/age-band; phrase has an audio file reference in Supabase Storage (`needs_audio` flags which phrases skip audio — see Units 2 & 4 decision above)
 - `creatures` — linked to phrases: species/color/level
-- `attempts` — per-rep log: profile, phrase, tier, correct/incorrect, timestamp
-- `progress` — derived per profile: streak, XP, mastery/SRS state per phrase, creatures unlocked
+- `attempts` — per-rep log: profile, phrase, tier (learn/recognize/say-it/build-it), correct/incorrect (nullable — say-it has no hard correct/incorrect), plus `self_grade`/`parent_grade`/`recording_path` for say-it, timestamp
+- `progress` — derived per profile: streak, XP, mastery/SRS state per phrase, creatures unlocked. **SRS scheduling reads only Recognize + Build-it attempts** — Say-it is excluded (app-logic rule): an always-generous tier carries no real signal and would corrupt spaced-repetition scheduling if fed in. Parent thumbs-down on a recording is a manual demotion signal instead.
 
-## Immediate next steps
+## Status (updated 2026-08-09)
 
-1. Once Vinos confirms the new Supabase account exists, provision the project (Postgres + a Storage bucket for audio), apply the schema above.
-2. Scaffold the Web/PWA app structure around the validated session-flow storyboard (link above).
-3. Build the Learn → Recognize → Produce loop against placeholder/TTS audio first, so nothing blocks on the real recordings landing.
-4. Swap in real audio as batches arrive (files land locally or get uploaded directly to Supabase Storage — ask which, per batch).
+Supabase provisioned, schema live, 69 phrases + 4 tips seeded, 43 audio files recorded and uploaded (Units 1, 3, 5). App scaffold started (Vite/React/TS/Tailwind, working profile picker against the live database). Units 2 & 4 (26 phrases) need audio recorded too — see `recording-checklist.md` — now that Produce/Say-it needs something to compare against.
+
+## Build order (advisor-reviewed, 2026-08-09)
+
+1. **Learn + Recognize, Unit 1 only, real audio, end to end.** Proves Storage audio delivery, `attempts` logging, SRS — zero unknowns, highest value. *(current step)*
+2. **Say-it Produce** (record → compare → self-grade → store blob).
+3. **Parent dashboard: recent recordings + thumbs.** This is what makes Say-it's grading honest rather than a shrug.
+4. **Build-it** word-order tier for the ~13 multi-word phrases.
+5. Never: Web Speech API / client-side ASR.
