@@ -55,7 +55,7 @@
 1. Come here — *inga vaa* — contrast: item 11, *po* (go)
 2. Sit down — *ukaaru* (corrected from earlier draft "utkaar" — Vinos has recorded this as `ukaaru`)
 3. Eat — *saapdu* — question form: item 14, *saaptiya?* (did you eat?)
-4. Wake up — *enthiri* (corrected from earlier draft "ezhundhiru" — Vinos has recorded this as `enthiri`) — contrast: item 12, *yenthi* ⚠️ not yet recorded, spelling/meaning not confirmed with native speaker — may be a colloquial variant of "get up," check before recording
+4. Wake up — *enthiri* (corrected from earlier draft "ezhundhiru" — Vinos has recorded this as `enthiri`) — contrast: item 12, *yenthi* ⚠️ not yet recorded (spelling/meaning confirmed by Vinos, native speaker)
 5. Sleep — *thoongu*
 6. Wash your hands — *kai kazhuvu*
 7. Brush your teeth — *teeth brush pannu* (locked: Tanglish form, not the formal *pல் thei*)
@@ -63,7 +63,7 @@
 9. Wait — *nillu* — related: item 11 *po* (go), item 15 *nada* (walk)
 10. Be quiet — *satham podaadhey*
 11. Go (bonus, contrast) — *po* ⚠️ not yet recorded — opposite of item 1, *vaa*
-12. Get up (bonus, contrast) — *yenthi* ⚠️ not yet recorded, ⚠️ unconfirmed spelling/meaning — contrast with item 4, *enthiri*
+12. Get up (bonus, contrast) — *yenthi* ⚠️ not yet recorded — contrast with item 4, *enthiri*
 13. Shall we go? (bonus, question form) — *povoma?* ⚠️ not yet recorded — question form of item 8, *povom*
 14. Did you eat? (bonus, question form) — *saaptiya?* ⚠️ not yet recorded — question form of item 3, *saapdu*
 15. Walk (bonus) — *nada* ⚠️ not yet recorded — related to item 9, *nillu*, and item 11, *po*

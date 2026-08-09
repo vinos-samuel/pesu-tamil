@@ -48,7 +48,7 @@ Native-speaker audio, one phrase per file, iPhone Voice Memo → `VoiceNotes/` i
 | `Unit-5-actions-09-nillu.m4a` | Wait | nillu | ✅ |
 | `Unit-5-actions-10-satham-podaadhey.m4a` | Be quiet | satham podaadhey | ✅ |
 | `Unit-5-actions-11-po.m4a` | Go (opposite of "vaa") | po | ⚠️ **still to record** |
-| `Unit-5-actions-12-yenthi.m4a` | Get up (contrast with "enthiri") | yenthi | ⚠️ **still to record — spelling/meaning unconfirmed, check with native speaker first** |
+| `Unit-5-actions-12-yenthi.m4a` | Get up (contrast with "enthiri") | yenthi | ⚠️ **still to record** |
 | `Unit-5-actions-13-povoma.m4a` | Shall we go? (question form of "povom") | povoma? | ⚠️ **still to record** |
 | `Unit-5-actions-14-saaptiya.m4a` | Did you eat? (question form of "saapdu") | saaptiya? | ⚠️ **still to record** |
 | `Unit-5-actions-15-nada.m4a` | Walk (related to "nillu"/"po") | nada | ⚠️ **still to record** |
@@ -56,8 +56,6 @@ Native-speaker audio, one phrase per file, iPhone Voice Memo → `VoiceNotes/` i
 
 ## Still outstanding
 - 1 item in Unit 1, 3 in Unit 3, 6 in Unit 5 — **10 clips total**.
-- The "yenthi" item needs a native-speaker check on spelling/meaning before recording, not just a read-through.
-- Full native-speaker accuracy/register review of everything (including what's already recorded) is still pending — nothing here is final-reviewed yet, per `curriculum-phrases.md`.
 
 ## Once fully recorded
 

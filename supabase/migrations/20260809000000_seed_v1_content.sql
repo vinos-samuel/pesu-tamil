@@ -8,9 +8,8 @@
 -- uploaded to the phrase-audio Storage bucket.
 --
 -- Every phrase still gets a creature (Learn-tier taming mechanic applies across
--- all units); for needs_audio = false phrases, the Learn tier is assumed to show
--- pronunciation text instead of a play button -- flagged as an assumption, not
--- yet confirmed with Vinos.
+-- all units); for needs_audio = false phrases, the Learn tier shows pronunciation
+-- text instead of a play button. Confirmed with Vinos 2026-08-09.
 
 insert into units (number, slug, title) values
   (1, 'greetings', 'Greetings & Courtesy'),
@@ -100,7 +99,7 @@ from units, (values
   (1, 'inga-vaa', 'Come here', 'inga vaa', 'contrast: po (item 11, go)'),
   (2, 'ukaaru', 'Sit down', 'ukaaru', 'corrected from earlier draft "utkaar"'),
   (3, 'saapdu', 'Eat', 'saapdu', 'question form: saaptiya? (item 14, did you eat?)'),
-  (4, 'enthiri', 'Wake up', 'enthiri', 'corrected from earlier draft "ezhundhiru"; contrast: yenthi (item 12, unconfirmed)'),
+  (4, 'enthiri', 'Wake up', 'enthiri', 'corrected from earlier draft "ezhundhiru"; contrast: yenthi (item 12)'),
   (5, 'thoongu', 'Sleep', 'thoongu', null),
   (6, 'kai-kazhuvu', 'Wash your hands', 'kai kazhuvu', null),
   (7, 'brush-pannu', 'Brush your teeth', 'teeth brush pannu', 'locked: Tanglish form, not the formal "pல் thei"'),
@@ -108,7 +107,7 @@ from units, (values
   (9, 'nillu', 'Wait', 'nillu', 'related: po (item 11, go), nada (item 15, walk)'),
   (10, 'satham-podaadhey', 'Be quiet', 'satham podaadhey', null),
   (11, 'po', 'Go (bonus, contrast)', 'po', 'opposite of vaa (item 1); not yet recorded'),
-  (12, 'yenthi', 'Get up (bonus, contrast)', 'yenthi', 'unconfirmed spelling/meaning -- contrast with enthiri (item 4) -- confirm with native speaker before recording'),
+  (12, 'yenthi', 'Get up (bonus, contrast)', 'yenthi', 'contrast with enthiri (item 4); confirmed by Vinos, native speaker'),
   (13, 'povoma', 'Shall we go? (bonus, question form)', 'povoma?', 'question form of povom (item 8); not yet recorded'),
   (14, 'saaptiya', 'Did you eat? (bonus, question form)', 'saaptiya?', 'question form of saapdu (item 3); not yet recorded'),
   (15, 'nada', 'Walk (bonus)', 'nada', 'related to nillu (item 9), po (item 11); not yet recorded'),
