@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
-import { getPhrasesWithCreatures, getUnitBySlug } from "./lib/queries";
+import { getPhrasesWithCreatures, type UnitWithReadiness } from "./lib/queries";
 import { isBuildItEligible, type PhraseWithCreature, type Profile } from "./lib/types";
 import Learn from "./screens/Learn";
 import Recognize from "./screens/Recognize";
 import SayIt from "./screens/SayIt";
 import BuildIt from "./screens/BuildIt";
 import ParentDashboard from "./screens/ParentDashboard";
+import UnitPicker from "./screens/UnitPicker";
 
 type Screen =
   | "picker"
   | "parent"
+  | "units"
   | "intro"
   | "learn"
   | "recognize"
@@ -71,9 +73,12 @@ export default function App() {
     }
   }
 
-  async function selectProfile(p: Profile) {
+  function selectProfile(p: Profile) {
     setProfile(p);
-    const unit = await getUnitBySlug("greetings");
+    setScreen("units");
+  }
+
+  async function pickUnit(unit: UnitWithReadiness) {
     setUnitTitle(unit.title);
     const withCreatures = await getPhrasesWithCreatures(unit.id);
     setPhrases(withCreatures);
@@ -207,6 +212,11 @@ export default function App() {
   // -- Parent dashboard ------------------------------------------------------
   if (screen === "parent") {
     return <ParentDashboard onBack={() => setScreen("picker")} />;
+  }
+
+  // -- Unit picker -----------------------------------------------------------
+  if (screen === "units" && profile) {
+    return <UnitPicker profile={profile} onPick={pickUnit} />;
   }
 
   // -- Unit intro ------------------------------------------------------------

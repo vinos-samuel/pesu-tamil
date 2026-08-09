@@ -11,6 +11,32 @@ export async function getUnitBySlug(slug: string): Promise<Unit> {
   return data;
 }
 
+export type UnitWithReadiness = Unit & { phraseCount: number; ready: boolean };
+
+/** A unit is "ready" when every phrase that needs audio actually has it.
+ * Units 2 & 4 currently aren't (recordings pending) -- this flips to true
+ * automatically once audio_path gets filled in, no code change needed. */
+export async function getUnitsWithReadiness(): Promise<UnitWithReadiness[]> {
+  const { data: units, error: uErr } = await supabase
+    .from("units")
+    .select("id, number, slug, title")
+    .order("number", { ascending: true });
+  if (uErr) throw uErr;
+
+  const { data: phrases, error: pErr } = await supabase
+    .from("phrases")
+    .select("unit_id, needs_audio, audio_path");
+  if (pErr) throw pErr;
+
+  return (units as Unit[]).map((u) => {
+    const unitPhrases = (phrases as { unit_id: string; needs_audio: boolean; audio_path: string | null }[]).filter(
+      (p) => p.unit_id === u.id
+    );
+    const missing = unitPhrases.filter((p) => p.needs_audio && !p.audio_path);
+    return { ...u, phraseCount: unitPhrases.length, ready: missing.length === 0 };
+  });
+}
+
 export async function getPhrasesWithCreatures(
   unitId: string
 ): Promise<PhraseWithCreature[]> {
