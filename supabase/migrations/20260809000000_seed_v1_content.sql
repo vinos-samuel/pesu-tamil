@@ -1,4 +1,4 @@
--- Seed v1 content: Units 1-5, 70 phrases total (11+16+14+10+19).
+-- Seed v1 content: Units 1-5, 69 phrases total (10+16+14+10+19).
 -- Draft, partially native-reviewed as of 2026-08-09 -- see docs/curriculum-phrases.md
 -- for the authoritative version with full annotations; this file mirrors it.
 --
@@ -18,66 +18,65 @@ insert into units (number, slug, title) values
   (4, 'numbers', 'Numbers 1-10'),
   (5, 'actions', 'Action Commands & Routines');
 
--- Unit 1 -- Greetings & Courtesy (11, all needs_audio = true, all recorded except #11)
-insert into phrases (unit_id, seq, slug, english, tamil_romanized, needs_audio, notes)
-select id, v.seq, v.slug, v.english, v.tamil, true, v.notes
+-- Unit 1 -- Greetings & Courtesy (10, all needs_audio = true, all recorded)
+insert into phrases (unit_id, seq, slug, english, tamil_romanized, needs_audio, notes, word_gloss)
+select id, v.seq, v.slug, v.english, v.tamil, true, v.notes, v.gloss
 from units, (values
-  (1, 'vanakkam', 'Hello', 'vanakkam', null),
-  (2, 'eppadi-irukka', 'How are you? (peer/cousin)', 'eppadi irukka?', null),
-  (3, 'eppadi-irukkeenga', 'How are you? (elder -- Paati/Thatha)', 'eppadi irukkeenga?', 'honorific -- own item, not a variant'),
-  (4, 'nalla-irukken', 'I''m fine', 'nalla irukken', null),
-  (5, 'aamaa', 'Yes', 'aamaa', null),
-  (6, 'illa', 'No', 'illa', null),
-  (7, 'nandri', 'Thank you', 'nandri', 'commonly said in English even at home; Tamil optional, either is fine'),
-  (8, 'sorry', 'Sorry', 'sorry / mannikkanum', 'recorded -- register as used'),
-  (9, 'poyttu-varen', 'Goodbye', 'poyttu varen', 'lit. "I''ll go and come" -- not word-for-word'),
-  (10, 'iravu-vanakkam', 'Good night', 'iravu vanakkam', 'commonly said in English even at home; Tamil optional, either is fine'),
-  (11, 'kaalai-vanakkam', 'Good morning', 'kaalai vanakkam', 'not yet recorded, not yet native-reviewed; commonly said in English even at home; Tamil optional, either is fine')
-) as v(seq, slug, english, tamil, notes)
+  (1, 'vanakkam', 'Hello', 'vanakkam', null, null),
+  (2, 'eppadi-irukka', 'How are you? (peer/cousin)', 'eppadi irukka?', null, 'eppadi = how, irukka = are you (question form)'),
+  (3, 'eppadi-irukkeenga', 'How are you? (elder -- Paati/Thatha)', 'eppadi irukkeenga?', 'honorific -- own item, not a variant', 'eppadi = how, irukkeenga = are you (respectful)'),
+  (4, 'nalla-irukken', 'I''m fine', 'nalla irukken', null, 'nalla = well/good, irukken = I am'),
+  (5, 'aamaa', 'Yes', 'aamaa', null, null),
+  (6, 'illa', 'No', 'illa', null, null),
+  (7, 'nandri', 'Thank you', 'nandri', 'commonly said in English even at home; Tamil optional, either is fine', null),
+  (8, 'sorry', 'Sorry', 'sorry / mannikkanum', 'recorded -- register as used', null),
+  (9, 'poyttu-varen', 'Goodbye', 'poyttu varen', 'lit. "I''ll go and come" -- not word-for-word', 'poyttu = having gone, varen = I''ll come'),
+  (10, 'iravu-vanakkam', 'Good night', 'iravu vanakkam', 'Good morning (kaalai vanakkam) and Good night are both commonly said in English even at home -- Tamil optional, either is fine. See tip.', 'iravu = night, vanakkam = greeting')
+) as v(seq, slug, english, tamil, notes, gloss)
 where units.slug = 'greetings';
 
 -- Unit 2 -- Family & Kinship (16, all needs_audio = false, text-pronunciation only)
-insert into phrases (unit_id, seq, slug, english, tamil_romanized, needs_audio, notes)
-select id, v.seq, v.slug, v.english, v.tamil, false, v.notes
+insert into phrases (unit_id, seq, slug, english, tamil_romanized, needs_audio, notes, word_gloss)
+select id, v.seq, v.slug, v.english, v.tamil, false, v.notes, v.gloss
 from units, (values
-  (1, 'amma', 'Mom', 'amma', null),
-  (2, 'appa', 'Dad', 'appa', null),
-  (3, 'paati', 'Grandma', 'paati', 'also used for grandma''s/grandpa''s own sisters (grand-aunts), not just direct grandmother'),
-  (4, 'thatha', 'Grandpa', 'thatha', 'also used for grandma''s/grandpa''s own brothers (grand-uncles), not just direct grandfather'),
-  (5, 'anna', 'Older brother', 'anna', null),
-  (6, 'akka', 'Older sister', 'akka', null),
-  (7, 'thambi', 'Younger brother', 'thambi', null),
-  (8, 'thangachi', 'Younger sister', 'thangachi', null),
-  (9, 'mama', 'Mom''s brother (bonus)', 'mama', null),
-  (10, 'athai', 'Dad''s sister (bonus)', 'athai', 'elder/younger split for Dad''s sisters still deferred to v1.1 (uncle-side split now covered by periyappa/chitappa)'),
-  (11, 'periyappa', 'Dad''s elder brother (bonus)', 'periyappa', null),
-  (12, 'periyamma', 'Dad''s elder brother''s wife (bonus)', 'periyamma', null),
-  (13, 'chitappa', 'Dad''s younger brother (bonus)', 'chitappa', null),
-  (14, 'chitti', 'Dad''s younger brother''s wife (bonus)', 'chitti', null),
-  (15, 'en-amma', 'My mom (bonus, sentence-level)', 'en amma', 'possessive pattern: en = my'),
-  (16, 'un-appa', 'Your dad (bonus, sentence-level)', 'un appa', 'possessive pattern: un = your')
-) as v(seq, slug, english, tamil, notes)
+  (1, 'amma', 'Mom', 'amma', null, null),
+  (2, 'appa', 'Dad', 'appa', null, null),
+  (3, 'paati', 'Grandma', 'paati', 'also used for grandma''s/grandpa''s own sisters (grand-aunts), not just direct grandmother', null),
+  (4, 'thatha', 'Grandpa', 'thatha', 'also used for grandma''s/grandpa''s own brothers (grand-uncles), not just direct grandfather', null),
+  (5, 'anna', 'Older brother', 'anna', null, null),
+  (6, 'akka', 'Older sister', 'akka', null, null),
+  (7, 'thambi', 'Younger brother', 'thambi', null, null),
+  (8, 'thangachi', 'Younger sister', 'thangachi', null, null),
+  (9, 'mama', 'Mom''s brother (bonus)', 'mama', null, null),
+  (10, 'athai', 'Dad''s sister (bonus)', 'athai', 'elder/younger split for Dad''s sisters still deferred to v1.1 (uncle-side split now covered by periyappa/chitappa)', null),
+  (11, 'periyappa', 'Dad''s elder brother (bonus)', 'periyappa', null, null),
+  (12, 'periyamma', 'Dad''s elder brother''s wife (bonus)', 'periyamma', null, null),
+  (13, 'chitappa', 'Dad''s younger brother (bonus)', 'chitappa', null, null),
+  (14, 'chitti', 'Dad''s younger brother''s wife (bonus)', 'chitti', null, null),
+  (15, 'en-amma', 'My mom (bonus, sentence-level)', 'en amma', null, 'en = my, amma = mom'),
+  (16, 'un-appa', 'Your dad (bonus, sentence-level)', 'un appa', null, 'un = your, appa = dad')
+) as v(seq, slug, english, tamil, notes, gloss)
 where units.slug = 'family';
 
--- Unit 3 -- Mealtime Words (14, all needs_audio = true; #1-8 recorded, #9-14 not yet)
-insert into phrases (unit_id, seq, slug, english, tamil_romanized, needs_audio, notes)
-select id, v.seq, v.slug, v.english, v.tamil, true, v.notes
+-- Unit 3 -- Mealtime Words (14, all needs_audio = true, all recorded)
+insert into phrases (unit_id, seq, slug, english, tamil_romanized, needs_audio, notes, word_gloss)
+select id, v.seq, v.slug, v.english, v.tamil, true, v.notes, v.gloss
 from units, (values
-  (1, 'pasikkudhu', 'I''m hungry', 'pasikkudhu', 'opposite: pasika illa (item 9)'),
-  (2, 'thanni-vaenum', 'I want water', 'thanni vaenum', null),
-  (3, 'thanni-kodu', 'Give me water', 'thanni kodu', 'direct, not "please pass"'),
-  (4, 'saapadu-vaenum', 'I want to eat', 'saapadu vaenum', 'corrected from earlier draft "saapida vaenum"; recorded as saapadu-vaenum'),
-  (5, 'rusiyaa-irukku', 'Tastes good!', 'rusiyaa irukku', '"tastiya irukku" also fine, commonly used alternative'),
-  (6, 'kaaramaa-irukka', 'Is it spicy?', 'kaaramaa irukka?', 'question form (-a) vs. item 5 statement form (-u): irukku = "it is" / irukka = "is it?"'),
-  (7, 'pothum', 'I''m full / enough', 'pothum', 'contrast: innum konjam (item 8, want more), neraya (item 11, a lot)'),
-  (8, 'innum-konjam', 'A little more, please', 'innum konjam', null),
-  (9, 'pasika-illa', 'Not hungry (bonus, contrast)', 'pasika illa', 'opposite of pasikkudhu (item 1); not yet recorded'),
-  (10, 'vaendam', 'Don''t want (bonus, contrast)', 'vaendam', 'opposite of vaenum (items 2, 4); not yet recorded'),
-  (11, 'neraya', 'A lot / a lot more (bonus, contrast)', 'neraya', 'opposite of konjam (item 8); not yet recorded'),
-  (12, 'idhu', 'This (bonus)', 'idhu', 'not yet recorded'),
-  (13, 'adhu', 'That (bonus)', 'adhu', 'not yet recorded'),
-  (14, 'idhu-enna', 'What is this? (bonus, sentence-level)', 'idhu enna?', 'pointing at food and asking what it is; builds on idhu (item 12); not yet recorded')
-) as v(seq, slug, english, tamil, notes)
+  (1, 'pasikkudhu', 'I''m hungry', 'pasikkudhu', 'opposite: pasika illa (item 9)', 'pasi = hunger'),
+  (2, 'thanni-vaenum', 'I want water', 'thanni vaenum', null, 'thanni = water, vaenum = want'),
+  (3, 'thanni-kodu', 'Give me water', 'thanni kodu', 'direct, not "please pass"', 'thanni = water, kodu = give'),
+  (4, 'saapadu-vaenum', 'I want to eat', 'saapadu vaenum', 'corrected from earlier draft "saapida vaenum"; recorded as saapadu-vaenum', 'saapadu = food/eat, vaenum = want'),
+  (5, 'rusiyaa-irukku', 'Tastes good!', 'rusiyaa irukku', '"tastiya irukku" also fine, commonly used alternative', 'rusiyaa = tasty, irukku = is'),
+  (6, 'kaaramaa-irukka', 'Is it spicy?', 'kaaramaa irukka?', 'question form (-a) vs. item 5 statement form (-u): irukku = "it is" / irukka = "is it?"', 'kaaramaa = spicy, irukka = is it (question form)'),
+  (7, 'pothum', 'I''m full / enough', 'pothum', 'contrast: innum konjam (item 8, want more), neraya (item 11, a lot)', null),
+  (8, 'innum-konjam', 'A little more, please', 'innum konjam', null, 'innum = more, konjam = a little'),
+  (9, 'pasika-illa', 'Not hungry (bonus, contrast)', 'pasika illa', 'opposite of pasikkudhu (item 1); also said as "pasi illa"', 'pasi = hunger, illa = not/no'),
+  (10, 'vaendam', 'Don''t want (bonus, contrast)', 'vaendam', 'opposite of vaenum (items 2, 4)', null),
+  (11, 'neraya', 'A lot / a lot more (bonus, contrast)', 'neraya', 'opposite of konjam (item 8)', null),
+  (12, 'idhu', 'This (bonus)', 'idhu', null, null),
+  (13, 'adhu', 'That (bonus)', 'adhu', null, null),
+  (14, 'idhu-enna', 'What is this? (bonus, sentence-level)', 'idhu enna?', 'pointing at food and asking what it is; builds on idhu (item 12)', 'idhu = this, enna = what')
+) as v(seq, slug, english, tamil, notes, gloss)
 where units.slug = 'mealtime';
 
 -- Unit 4 -- Numbers 1-10 (10, all needs_audio = false, text-pronunciation only)
@@ -97,30 +96,30 @@ from units, (values
 ) as v(seq, slug, english, tamil)
 where units.slug = 'numbers';
 
--- Unit 5 -- Action Commands & Routines (19, all needs_audio = true; #1-10 recorded, #11-19 not yet)
-insert into phrases (unit_id, seq, slug, english, tamil_romanized, needs_audio, notes)
-select id, v.seq, v.slug, v.english, v.tamil, true, v.notes
+-- Unit 5 -- Action Commands & Routines (19, all needs_audio = true, all recorded)
+insert into phrases (unit_id, seq, slug, english, tamil_romanized, needs_audio, notes, word_gloss)
+select id, v.seq, v.slug, v.english, v.tamil, true, v.notes, v.gloss
 from units, (values
-  (1, 'inga-vaa', 'Come here', 'inga vaa', 'contrast: po (item 11, go)'),
-  (2, 'ukaaru', 'Sit down', 'ukaaru', 'corrected from earlier draft "utkaar"'),
-  (3, 'saapdu', 'Eat', 'saapdu', 'question form: saaptiya? (item 14, did you eat?)'),
-  (4, 'enthiri', 'Wake up', 'enthiri', 'corrected from earlier draft "ezhundhiru"; contrast: yenthi (item 12)'),
-  (5, 'thoongu', 'Sleep', 'thoongu', null),
-  (6, 'kai-kazhuvu', 'Wash your hands', 'kai kazhuvu', null),
-  (7, 'brush-pannu', 'Brush your teeth', 'teeth brush pannu', 'locked: Tanglish form, not the formal "pல் thei"'),
-  (8, 'povom', 'Let''s go', 'povom', 'question form: povoma? (item 13, shall we go?)'),
-  (9, 'nillu', 'Wait', 'nillu', 'related: po (item 11, go), nada (item 15, walk)'),
-  (10, 'satham-podaadhey', 'Be quiet', 'satham podaadhey', null),
-  (11, 'po', 'Go (bonus, contrast)', 'po', 'opposite of vaa (item 1); not yet recorded'),
-  (12, 'yenthi', 'Get up (bonus, contrast)', 'yenthi', 'contrast with enthiri (item 4); confirmed by Vinos, native speaker'),
-  (13, 'povoma', 'Shall we go? (bonus, question form)', 'povoma?', 'question form of povom (item 8); not yet recorded'),
-  (14, 'saaptiya', 'Did you eat? (bonus, question form)', 'saaptiya?', 'question form of saapdu (item 3); not yet recorded'),
-  (15, 'nada', 'Walk (bonus)', 'nada', 'related to nillu (item 9), po (item 11); not yet recorded'),
-  (16, 'yenga-pora', 'Where are you going? (bonus, sentence-level)', 'yenga pora?', 'first full-sentence item, previews Unit 6+ direction; not yet recorded'),
-  (17, 'vaanga', 'Come (respectful, to elders) (bonus)', 'vaanga', 'respect pattern: pairs with inga vaa (item 1) -- add "-nga" when speaking to elders; not yet recorded'),
-  (18, 'saapidunga', 'Please eat (respectful, to elders) (bonus)', 'saapidunga', 'respect pattern: pairs with saapdu (item 3); not yet recorded'),
-  (19, 'azhaadhey', 'Don''t cry (bonus)', 'azhaadhey', 'negative-imperative pattern: pairs with satham podaadhey (item 10) -- "-aadhey" = don''t do it; not yet recorded')
-) as v(seq, slug, english, tamil, notes)
+  (1, 'inga-vaa', 'Come here', 'inga vaa', 'contrast: po (item 11, go)', 'inga = here, vaa = come'),
+  (2, 'ukaaru', 'Sit down', 'ukaaru', 'corrected from earlier draft "utkaar"', null),
+  (3, 'saapdu', 'Eat', 'saapdu', 'question form: saaptiya? (item 14, did you eat?)', null),
+  (4, 'enthiri', 'Wake up', 'enthiri', 'corrected from earlier draft "ezhundhiru"; contrast: yenthi (item 12)', null),
+  (5, 'thoongu', 'Sleep', 'thoongu', null, null),
+  (6, 'kai-kazhuvu', 'Wash your hands', 'kai kazhuvu', null, 'kai = hand, kazhuvu = wash'),
+  (7, 'brush-pannu', 'Brush your teeth', 'teeth brush pannu', 'locked: Tanglish form, not the formal "pல் thei"', 'brush = brush (English), pannu = do'),
+  (8, 'povom', 'Let''s go', 'povom', 'question form: povoma? (item 13, shall we go?)', null),
+  (9, 'nillu', 'Wait', 'nillu', 'related: po (item 11, go), nada (item 15, walk)', null),
+  (10, 'satham-podaadhey', 'Be quiet', 'satham podaadhey', null, 'satham = noise, podaadhey = don''t make'),
+  (11, 'po', 'Go (bonus, contrast)', 'po', 'opposite of vaa (item 1)', null),
+  (12, 'yenthi', 'Get up (bonus, contrast)', 'yenthi', 'contrast with enthiri (item 4); confirmed by Vinos, native speaker', null),
+  (13, 'povoma', 'Shall we go? (bonus, question form)', 'povoma?', 'question form of povom (item 8)', null),
+  (14, 'saaptiya', 'Did you eat? (bonus, question form)', 'saaptiya?', 'question form of saapdu (item 3)', null),
+  (15, 'nada', 'Walk (bonus)', 'nada', 'related to nillu (item 9), po (item 11)', null),
+  (16, 'yenga-pora', 'Where are you going? (bonus, sentence-level)', 'yenga pora?', 'first full-sentence item, previews Unit 6+ direction', 'yenga = where, pora = going'),
+  (17, 'vaanga', 'Come (respectful, to elders) (bonus)', 'vaanga', 'respect pattern: pairs with inga vaa (item 1) -- add "-nga" when speaking to elders', null),
+  (18, 'saapidunga', 'Please eat (respectful, to elders) (bonus)', 'saapidunga', 'respect pattern: pairs with saapdu (item 3)', null),
+  (19, 'azhaadhey', 'Don''t cry (bonus)', 'azhaadhey', 'negative-imperative pattern: pairs with satham podaadhey (item 10) -- "-aadhey" = don''t do it', null)
+) as v(seq, slug, english, tamil, notes, gloss)
 where units.slug = 'actions';
 
 -- Comprehension-check pairs: link each new pattern phrase to its clearest
@@ -137,6 +136,12 @@ update phrases set paired_phrase_id = (select id from phrases where slug = 'sath
 where slug = 'azhaadhey';
 
 -- Text callouts (plain language, no grammar jargon in the wording).
+insert into tips (unit_id, phrase_id, title, body)
+select u.id, p.id, 'Good morning works in English too',
+  'Good morning (kaalai vanakkam) and good night are both said in English all the time, even at home -- Tamil is nice to know but not required here.'
+from units u, phrases p
+where u.slug = 'greetings' and p.slug = 'iravu-vanakkam';
+
 insert into tips (unit_id, phrase_id, title, body)
 select u.id, p.id, 'Talking to elders',
   'With cousins and friends: saapdu (eat), vaa (come). With Paati, Thatha, and other elders, add "-nga": saapidunga, vaanga. It''s built-in respect.'

@@ -36,6 +36,7 @@ create table phrases (
   audio_path text, -- Storage object path, e.g. unit-1-greetings/01-vanakkam.m4a
   needs_audio boolean not null default true, -- false for units taught as text-pronunciation only (no native recording), e.g. Units 2 & 4
   notes text, -- register flags, alt phrasing, contrast/opposite/question-form callouts (dev-only, never shown verbatim to the learner)
+  word_gloss text, -- word-by-word breakdown for multi-word phrases, e.g. "thanni = water, vaenum = want" -- USER-FACING (shown in-app as a caption), unlike notes. Null where the phrase is a single root word with nothing to break down.
   paired_phrase_id uuid references phrases(id), -- links a phrase to its one clearest contrast partner (e.g. saapdu <-> saapidunga) for quiz-style comprehension checks; not used for every contrast, only the clean 1:1 ones -- see docs/curriculum-phrases.md
   created_at timestamptz not null default now(),
   unique (unit_id, seq)
