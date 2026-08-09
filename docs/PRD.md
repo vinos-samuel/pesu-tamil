@@ -73,7 +73,7 @@ Supabase provisioned, schema live, 69 phrases + 4 tips seeded, 43 audio files re
 
 ## Build order (advisor-reviewed, 2026-08-09)
 
-1. **Learn + Recognize, Unit 1 only, real audio, end to end.** Proves Storage audio delivery, `attempts` logging, SRS — zero unknowns, highest value. *(current step)*
+1. **Learn + Recognize, Unit 1 only, real audio, end to end.** ✅ Done 2026-08-09 — verified against the live database (audio fetch, `attempts` logging for both tiers, `progress` tally, `profiles.total_xp`), not just code review.
 2. **Say-it Produce** (record → compare → self-grade → store blob).
 3. **Parent dashboard: recent recordings + thumbs.** This is what makes Say-it's grading honest rather than a shrug.
 4. **Build-it** word-order tier for the ~13 multi-word phrases.
