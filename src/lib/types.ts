@@ -47,3 +47,25 @@ const SPECIES_EMOJI: Record<string, string> = {
 export function creatureEmoji(species: string | undefined): string {
   return (species && SPECIES_EMOJI[species]) || "🥚";
 }
+
+/** Parses "thanni = water, vaenum = want" into [{tamil:"thanni", english:"water"}, ...],
+ * in the same order as the spoken phrase. Returns [] if not parseable. */
+export function parseWordGloss(
+  gloss: string | null
+): { tamil: string; english: string }[] {
+  if (!gloss) return [];
+  return gloss
+    .split(",")
+    .map((part) => {
+      const [tamil, english] = part.split("=").map((s) => s.trim());
+      return tamil && english ? { tamil, english } : null;
+    })
+    .filter((x): x is { tamil: string; english: string } => x !== null);
+}
+
+/** Build-it eligibility: needs a real word-by-word breakdown, not just a
+ * single confirmed root (e.g. pasikkudhu only has "pasi = hunger" -- one
+ * entry, not eligible) and real audio to play as the reward/confirmation. */
+export function isBuildItEligible(p: Phrase): boolean {
+  return parseWordGloss(p.word_gloss).length >= 2 && !!p.audio_path;
+}

@@ -1,13 +1,22 @@
 import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
 import { getPhrasesWithCreatures, getUnitBySlug } from "./lib/queries";
-import type { PhraseWithCreature, Profile } from "./lib/types";
+import { isBuildItEligible, type PhraseWithCreature, type Profile } from "./lib/types";
 import Learn from "./screens/Learn";
 import Recognize from "./screens/Recognize";
 import SayIt from "./screens/SayIt";
+import BuildIt from "./screens/BuildIt";
 import ParentDashboard from "./screens/ParentDashboard";
 
-type Screen = "picker" | "parent" | "intro" | "learn" | "recognize" | "sayit" | "done";
+type Screen =
+  | "picker"
+  | "parent"
+  | "intro"
+  | "learn"
+  | "recognize"
+  | "sayit"
+  | "buildit"
+  | "done";
 
 const AVATAR_COLORS = ["marigold", "teal"] as const;
 
@@ -24,6 +33,7 @@ export default function App() {
   const [phrases, setPhrases] = useState<PhraseWithCreature[]>([]);
   const [recognizeCorrect, setRecognizeCorrect] = useState(0);
   const [sayItCount, setSayItCount] = useState(0);
+  const [buildItCorrect, setBuildItCorrect] = useState(0);
   const [xpGained, setXpGained] = useState(0);
 
   async function loadProfiles() {
@@ -95,6 +105,25 @@ export default function App() {
         .from("profiles")
         .update({ total_xp: profile.total_xp + xpGain })
         .eq("id", profile.id);
+      setProfile({ ...profile, total_xp: profile.total_xp + xpGain });
+    }
+    const eligible = phrases.filter(isBuildItEligible);
+    if (eligible.length === 0) {
+      setScreen("done");
+    } else {
+      setScreen("buildit");
+    }
+  }
+
+  async function finishBuildIt(correctCount: number) {
+    setBuildItCorrect(correctCount);
+    const xpGain = correctCount * 10;
+    setXpGained((prev) => prev + xpGain);
+    if (profile) {
+      await supabase
+        .from("profiles")
+        .update({ total_xp: profile.total_xp + xpGain })
+        .eq("id", profile.id);
     }
     setScreen("done");
   }
@@ -104,6 +133,7 @@ export default function App() {
     setScreen("picker");
     setRecognizeCorrect(0);
     setSayItCount(0);
+    setBuildItCorrect(0);
     setXpGained(0);
     loadProfiles();
   }
@@ -220,8 +250,15 @@ export default function App() {
     return <SayIt phrases={phrases} profile={profile} onDone={finishSayIt} />;
   }
 
+  // -- Build-it --------------------------------------------------------------
+  if (screen === "buildit" && profile) {
+    const eligible = phrases.filter(isBuildItEligible);
+    return <BuildIt phrases={eligible} profile={profile} onDone={finishBuildIt} />;
+  }
+
   // -- Done ----------------------------------------------------------------
   if (screen === "done") {
+    const buildItTotal = phrases.filter(isBuildItEligible).length;
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center">
         <h1 className="font-display text-4xl text-marigold-700">
@@ -229,6 +266,7 @@ export default function App() {
         </h1>
         <p className="font-body text-gray-600">
           {recognizeCorrect} / {phrases.length} correct · {sayItCount} said out loud
+          {buildItTotal > 0 && <> · {buildItCorrect} / {buildItTotal} built</>}
         </p>
         <p className="font-body text-gray-500">+{xpGained} XP</p>
         <button
