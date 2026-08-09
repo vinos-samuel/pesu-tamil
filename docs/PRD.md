@@ -75,7 +75,6 @@ Supabase provisioned, schema live, 69 phrases + 4 tips seeded, 43 audio files re
 
 1. **Learn + Recognize, Unit 1 only, real audio, end to end.** ✅ Done 2026-08-09 — verified against the live database (audio fetch, `attempts` logging for both tiers, `progress` tally, `profiles.total_xp`), not just code review.
 2. **Say-it Produce.** ✅ Done 2026-08-09. Storage bucket `say-it-recordings`, public — same call as `phrase-audio`: the app's whole access model is already "possession of the private URL/anon key," not per-object auth, so a second bucket with a different policy would be inconsistent complexity for no real gain at this scale. Verified end-to-end including the mic-blocked honor-system fallback (record→compare→self-grade path uses standard `MediaRecorder`, unverifiable in the sandboxed test browser but straightforward; real check happens on an actual device).
-2. **Say-it Produce** (record → compare → self-grade → store blob).
-3. **Parent dashboard: recent recordings + thumbs.** This is what makes Say-it's grading honest rather than a shrug.
-4. **Build-it** word-order tier for the ~13 multi-word phrases.
+3. **Parent dashboard.** ✅ Done 2026-08-09. Recent Say-it recordings (only ones with an actual `recording_path` — honor-system attempts don't show up, nothing to play back) with kid/native playback and thumbs. Reachable via a small text link on the picker screen, no auth, matches the app's overall access model. Verified list rendering and grade persistence with a synthetic test row (deleted after).
+4. **Build-it** word-order tier for the ~13 multi-word phrases. Not started — see open flag below.
 5. Never: Web Speech API / client-side ASR.

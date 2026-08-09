@@ -5,8 +5,9 @@ import type { PhraseWithCreature, Profile } from "./lib/types";
 import Learn from "./screens/Learn";
 import Recognize from "./screens/Recognize";
 import SayIt from "./screens/SayIt";
+import ParentDashboard from "./screens/ParentDashboard";
 
-type Screen = "picker" | "intro" | "learn" | "recognize" | "sayit" | "done";
+type Screen = "picker" | "parent" | "intro" | "learn" | "recognize" | "sayit" | "done";
 
 const AVATAR_COLORS = ["marigold", "teal"] as const;
 
@@ -162,8 +163,20 @@ export default function App() {
             Add
           </button>
         </form>
+
+        <button
+          onClick={() => setScreen("parent")}
+          className="mt-2 text-xs text-gray-400 underline hover:text-gray-600"
+        >
+          Parent dashboard
+        </button>
       </div>
     );
+  }
+
+  // -- Parent dashboard ------------------------------------------------------
+  if (screen === "parent") {
+    return <ParentDashboard onBack={() => setScreen("picker")} />;
   }
 
   // -- Unit intro ------------------------------------------------------------

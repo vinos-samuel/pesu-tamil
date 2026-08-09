@@ -101,3 +101,36 @@ export async function bumpProgress(params: {
     .eq("id", existing.id);
   if (error) throw error;
 }
+
+export type RecordingRow = {
+  id: string;
+  created_at: string;
+  self_grade: boolean | null;
+  parent_grade: boolean | null;
+  recording_path: string;
+  phrases: { english: string; tamil_romanized: string; audio_path: string | null } | null;
+  profiles: { name: string } | null;
+};
+
+/** Say-it recordings, newest first, for the parent dashboard. */
+export async function getRecentRecordings(limit = 50): Promise<RecordingRow[]> {
+  const { data, error } = await supabase
+    .from("attempts")
+    .select(
+      "id, created_at, self_grade, parent_grade, recording_path, phrases(english, tamil_romanized, audio_path), profiles(name)"
+    )
+    .eq("tier", "say-it")
+    .not("recording_path", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data as unknown as RecordingRow[];
+}
+
+export async function setParentGrade(attemptId: string, grade: boolean | null) {
+  const { error } = await supabase
+    .from("attempts")
+    .update({ parent_grade: grade })
+    .eq("id", attemptId);
+  if (error) throw error;
+}
