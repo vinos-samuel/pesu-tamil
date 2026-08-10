@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { audioUrl, recomputeMasteryState, logAttempt } from "../lib/queries";
 import { playAudio } from "../lib/playAudio";
 import QuestProgress from "../components/QuestProgress";
+import ReshowFlag from "../components/ReshowFlag";
 import { correctCopy, recognizeIncorrectCopy } from "../lib/copy";
 import type { PhraseWithCreature, Profile } from "../lib/types";
 
@@ -127,13 +128,16 @@ export default function ReverseRecognize({
       </div>
 
       {!picked && (
-        <button
-          onClick={confirm}
-          disabled={!previewed}
-          className="rounded-full bg-marigold-500 px-8 py-3 font-display text-white shadow disabled:opacity-30 hover:bg-marigold-700"
-        >
-          Choose this one ✓
-        </button>
+        <div className="flex flex-col items-center gap-3">
+          <button
+            onClick={confirm}
+            disabled={!previewed}
+            className="rounded-full bg-marigold-500 px-8 py-3 font-display text-white shadow disabled:opacity-30 hover:bg-marigold-700"
+          >
+            Choose this one ✓
+          </button>
+          <ReshowFlag profileId={profile.id} phraseId={target.id} />
+        </div>
       )}
 
       {picked && (

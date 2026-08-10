@@ -4,10 +4,18 @@
  * calls in here, so it's cheap to unit test. The caller (queries.ts's
  * getSchedulingInfo) does the DB reads and hands this a plain info array. */
 
+// The 2-distinct-modality mastery gate only counts these three -- "cluster"
+// is a separate, additional requirement (see PhraseSchedulingInfo below and
+// recomputeMasteryState in queries.ts), not a 4th interchangeable modality.
 export type GradableTier = "recognize" | "reverse-recognize" | "build-it";
-export type EncounterType = GradableTier | "learn" | "say-it";
+export type EncounterType = GradableTier | "learn" | "say-it" | "cluster";
 
-export type Encounter = { type: EncounterType; phraseId: string };
+export type Encounter = {
+  type: EncounterType;
+  phraseId: string;
+  /** Only set for type "cluster" -- which situational_prompts row to use. */
+  promptId?: string;
+};
 
 export type PhraseSchedulingInfo = {
   phraseId: string;
@@ -26,6 +34,12 @@ export type PhraseSchedulingInfo = {
   hasAudio: boolean;
   /** Most recent `say-it` attempt timestamp, for recency-based picking. */
   lastSayItAt: string | null;
+  /** Set only if this phrase belongs to a Nests cluster with a
+   * situational_prompts row it hasn't answered correctly yet. null for
+   * every phrase until Nests content is authored and seeded -- the
+   * "cluster" encounter bucket below is simply empty until then, no
+   * special-casing needed elsewhere. */
+  clusterPromptId: string | null;
 };
 
 function shuffle<T>(arr: T[]): T[] {
@@ -69,6 +83,10 @@ export function buildEncounterQueue(
   const oneModality = withAudio.filter(
     (i) => i.hasLearned && i.gradedModalitiesCorrect.size >= 1 && !i.mastered
   );
+  // Has an unanswered Nests prompt -- empty until Nests content is seeded.
+  const clusterEligible = withAudio.filter(
+    (i) => i.hasLearned && i.clusterPromptId !== null && !i.mastered
+  );
   // Mastered phrases due for review -- this is where a lapse gets caught:
   // if the kid's actually forgotten it, recomputeMasteryState demotes it
   // to "review" (following) after this attempt comes back wrong.
@@ -88,6 +106,9 @@ export function buildEncounterQueue(
   for (const info of doShuffle(oneModality)) {
     const type = missingModality(info);
     if (type) nonSayIt.push({ type, phraseId: info.phraseId });
+  }
+  for (const info of doShuffle(clusterEligible)) {
+    nonSayIt.push({ type: "cluster", phraseId: info.phraseId, promptId: info.clusterPromptId! });
   }
   for (const info of doShuffle(dueReview)) {
     const type = missingModality(info) ?? "recognize";

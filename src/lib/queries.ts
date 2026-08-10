@@ -85,7 +85,7 @@ export function audioUrl(audio_path: string): string {
 export async function logAttempt(params: {
   profile_id: string;
   phrase_id: string;
-  tier: "learn" | "recognize" | "reverse-recognize" | "say-it" | "build-it";
+  tier: "learn" | "recognize" | "reverse-recognize" | "say-it" | "build-it" | "cluster";
   correct?: boolean | null;
   self_grade?: boolean | null;
   recording_path?: string | null;
@@ -101,7 +101,14 @@ export async function logAttempt(params: {
   if (error) throw error;
 }
 
-const GRADED_TIERS = ["recognize", "reverse-recognize", "build-it", "cluster"] as const;
+// The 2-distinct-modality clause only counts these three -- "cluster" is a
+// separate, additional requirement below (enforced only when the phrase
+// actually belongs to a Nests cluster), not a 4th interchangeable modality.
+// Reaching mastery via 2 correct Recognize-direction answers while an
+// available adjacent-word discrimination sits untouched would defeat the
+// point of adding it.
+const GENERIC_MODALITIES = ["recognize", "reverse-recognize", "build-it"] as const;
+const GRADED_TIERS = [...GENERIC_MODALITIES, "cluster"] as const;
 
 /** Re-derives mastery_state from the full attempt history each call (cheap
  * at this scale, avoids incremental-tally bugs). Replaces the old
@@ -110,11 +117,10 @@ const GRADED_TIERS = ["recognize", "reverse-recognize", "build-it", "cluster"] a
  * that actually reaches 'mastered'.
  *
  * Gate: >=2 correct graded attempts on >=2 distinct calendar days, in >=2
- * distinct modalities (recognize / reverse-recognize / build-it / cluster),
- * AND the most recent graded attempt was correct. (Cluster ["adjacent
- * word"] attempts don't exist until the Nests phase ships -- until then
- * this clause is naturally harder to hit with only 2 modalities available,
- * not specially cased.)
+ * distinct generic modalities (recognize / reverse-recognize / build-it),
+ * the most recent graded attempt was correct, AND -- only if this phrase
+ * belongs to a Nests cluster -- at least one correct 'cluster' attempt.
+ * That last clause is vacuously true for phrases with no cluster.
  *
  * Lapse: a phrase that was 'mastered' and then fails the gate again (i.e.
  * a fresh wrong answer) drops to 'review', not 'learning' -- "restless,"
@@ -139,9 +145,28 @@ export async function recomputeMasteryState(params: {
 
   const correctAttempts = graded.filter((a) => a.correct);
   const distinctDays = new Set(correctAttempts.map((a) => new Date(a.created_at).toDateString()));
-  const distinctModalities = new Set(correctAttempts.map((a) => a.tier));
+  const distinctGenericModalities = new Set(
+    correctAttempts
+      .filter((a) => (GENERIC_MODALITIES as readonly string[]).includes(a.tier))
+      .map((a) => a.tier)
+  );
   const lastCorrect = graded[graded.length - 1].correct === true;
-  const mastered = distinctDays.size >= 2 && distinctModalities.size >= 2 && lastCorrect;
+
+  const { data: clusterRow, error: clusterErr } = await supabase
+    .from("cluster_members")
+    .select("cluster_id")
+    .eq("phrase_id", params.phrase_id)
+    .limit(1)
+    .maybeSingle();
+  if (clusterErr) throw clusterErr;
+  const hasClusterMembership = !!clusterRow;
+  const hasCorrectClusterAttempt = correctAttempts.some((a) => a.tier === "cluster");
+
+  const mastered =
+    distinctDays.size >= 2 &&
+    distinctGenericModalities.size >= 2 &&
+    lastCorrect &&
+    (!hasClusterMembership || hasCorrectClusterAttempt);
 
   const { data: existing, error: selErr } = await supabase
     .from("progress")
@@ -198,6 +223,7 @@ export type RecordingRow = {
   parent_grade: boolean | null;
   recording_path: string;
   phrases: {
+    id: string;
     english: string;
     tamil_romanized: string;
     audio_path: string | null;
@@ -212,7 +238,7 @@ export async function getRecentRecordings(limit = 50): Promise<RecordingRow[]> {
   const { data, error } = await supabase
     .from("attempts")
     .select(
-      "id, created_at, self_grade, parent_grade, recording_path, phrases(english, tamil_romanized, audio_path, slug, units(slug)), profiles(name)"
+      "id, created_at, self_grade, parent_grade, recording_path, phrases(id, english, tamil_romanized, audio_path, slug, units(slug)), profiles(name)"
     )
     .eq("tier", "say-it")
     .not("recording_path", "is", null)
@@ -366,6 +392,30 @@ export async function getSchedulingInfo(
     .in("phrase_id", phraseIds);
   if (pErr) throw pErr;
 
+  // Nests: which of these phrases have an unanswered situational_prompts
+  // row. Empty result set entirely until content is authored and seeded --
+  // no special-casing needed, the cluster bucket in buildEncounterQueue()
+  // just stays empty.
+  const { data: clusterMemberRows, error: cmErr } = await supabase
+    .from("cluster_members")
+    .select("cluster_id, phrase_id")
+    .in("phrase_id", phraseIds);
+  if (cmErr) throw cmErr;
+  const clusterIds = [...new Set((clusterMemberRows as { cluster_id: string }[]).map((r) => r.cluster_id))];
+  const promptIdByPhrase = new Map<string, string>();
+  if (clusterIds.length > 0) {
+    const { data: promptRows, error: promptErr } = await supabase
+      .from("situational_prompts")
+      .select("id, correct_phrase_id")
+      .in("cluster_id", clusterIds);
+    if (promptErr) throw promptErr;
+    for (const row of promptRows as { id: string; correct_phrase_id: string }[]) {
+      if (!promptIdByPhrase.has(row.correct_phrase_id)) {
+        promptIdByPhrase.set(row.correct_phrase_id, row.id);
+      }
+    }
+  }
+
   type AttemptRow = { phrase_id: string; tier: string; correct: boolean | null; created_at: string };
   type ProgressRow = { phrase_id: string; mastery_state: string; next_review_at: string | null };
 
@@ -398,6 +448,8 @@ export async function getSchedulingInfo(
     const lastSayItAt = sayItAttempts.length
       ? sayItAttempts[sayItAttempts.length - 1].created_at
       : null;
+    const hasCorrectClusterAttempt = phraseAttempts.some((a) => a.correct && a.tier === "cluster");
+    const clusterPromptId = hasCorrectClusterAttempt ? null : promptIdByPhrase.get(p.id) ?? null;
 
     return {
       phraseId: p.id,
@@ -408,8 +460,39 @@ export async function getSchedulingInfo(
       buildItEligible: isBuildItEligible(p),
       hasAudio: !!p.audio_path,
       lastSayItAt,
+      clusterPromptId,
     };
   });
+}
+
+export type ClusterPromptDetails = {
+  situationEn: string;
+  correctPhraseId: string;
+  memberPhraseIds: string[];
+};
+
+/** Fetches one situational_prompts row plus its cluster's full member list
+ * (for building the Cluster screen's options -- correct answer + the
+ * cluster's other members as distractors). */
+export async function getClusterPromptDetails(promptId: string): Promise<ClusterPromptDetails> {
+  const { data: prompt, error: promptErr } = await supabase
+    .from("situational_prompts")
+    .select("situation_en, correct_phrase_id, cluster_id")
+    .eq("id", promptId)
+    .single();
+  if (promptErr) throw promptErr;
+
+  const { data: members, error: memberErr } = await supabase
+    .from("cluster_members")
+    .select("phrase_id")
+    .eq("cluster_id", prompt.cluster_id);
+  if (memberErr) throw memberErr;
+
+  return {
+    situationEn: prompt.situation_en,
+    correctPhraseId: prompt.correct_phrase_id,
+    memberPhraseIds: (members as { phrase_id: string }[]).map((m) => m.phrase_id),
+  };
 }
 
 export type SessionRun = {
@@ -477,5 +560,74 @@ export async function completeRun(runId: string) {
     .from("session_runs")
     .update({ completed_at: new Date().toISOString() })
     .eq("id", runId);
+  if (error) throw error;
+}
+
+/** Kid soft-flag ("I didn't get it") -- pure scheduling signal, never
+ * touches attempts/mastery_state so it can't be gamed for reward. Pulls
+ * the phrase's next_review_at forward so the scheduler resurfaces it
+ * sooner, same mechanism as a normal review-due phrase. */
+export async function flagForReshow(profileId: string, phraseId: string) {
+  const { error: flagErr } = await supabase
+    .from("flags")
+    .insert({ profile_id: profileId, phrase_id: phraseId, source: "kid", kind: "reshow" });
+  if (flagErr) throw flagErr;
+
+  const { data: existing, error: selErr } = await supabase
+    .from("progress")
+    .select("id")
+    .eq("profile_id", profileId)
+    .eq("phrase_id", phraseId)
+    .maybeSingle();
+  if (selErr) throw selErr;
+  if (!existing) return; // never graded yet -- nothing to pull forward
+
+  const { error: updErr } = await supabase
+    .from("progress")
+    .update({ next_review_at: new Date().toISOString() })
+    .eq("id", existing.id);
+  if (updErr) throw updErr;
+}
+
+/** Parent hard-flag ("this content is wrong") -- feeds the next Nests
+ * authoring batch as a "don't repeat this" note, doesn't touch scheduling
+ * directly. */
+export async function flagContentIssue(phraseId: string, note?: string) {
+  const { error } = await supabase
+    .from("flags")
+    .insert({ phrase_id: phraseId, source: "parent", kind: "content_issue", note: note ?? null });
+  if (error) throw error;
+}
+
+export type FlagRow = {
+  id: string;
+  source: "kid" | "parent";
+  kind: "reshow" | "content_issue";
+  note: string | null;
+  resolved_at: string | null;
+  created_at: string;
+  phrases: { english: string } | null;
+};
+
+/** Flat list for the parent dashboard -- open first, then recently
+ * resolved. No approval workflow, no severity, no filters (deliberately --
+ * see docs/PRD.md's batch-authoring pattern; a review UI is only worth
+ * building once this becomes a recurring flow). */
+export async function getFlags(limit = 50): Promise<FlagRow[]> {
+  const { data, error } = await supabase
+    .from("flags")
+    .select("id, source, kind, note, resolved_at, created_at, phrases(english)")
+    .order("resolved_at", { ascending: true, nullsFirst: true })
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data as unknown as FlagRow[];
+}
+
+export async function resolveFlag(flagId: string, resolved: boolean) {
+  const { error } = await supabase
+    .from("flags")
+    .update({ resolved_at: resolved ? new Date().toISOString() : null })
+    .eq("id", flagId);
   if (error) throw error;
 }

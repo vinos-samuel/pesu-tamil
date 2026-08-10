@@ -4,7 +4,9 @@ import {
   completeRun,
   createRun,
   getActiveRun,
+  getClusterPromptDetails,
   getSchedulingInfo,
+  type ClusterPromptDetails,
   type SessionRun,
 } from "../lib/queries";
 import { supabase } from "../lib/supabase";
@@ -15,6 +17,7 @@ import Recognize from "./Recognize";
 import ReverseRecognize from "./ReverseRecognize";
 import SayIt from "./SayIt";
 import BuildIt from "./BuildIt";
+import Cluster from "./Cluster";
 
 export type RunSummary = {
   gradedCorrect: number;
@@ -29,6 +32,7 @@ const ENCOUNTER_LABELS: Record<Encounter["type"], string> = {
   "reverse-recognize": "What did they say?",
   "build-it": "Put the words in order!",
   "say-it": "Your turn to say it!",
+  cluster: "Which one fits?",
 };
 
 // Owns one "encounter run" -- 6-8 short, mixed activities instead of the
@@ -61,8 +65,36 @@ export default function SessionRunner({
   const [sayItCount, setSayItCount] = useState(0);
   const [xpGained, setXpGained] = useState(0);
   const [wrongStreak, setWrongStreak] = useState(0); // run-level "hearts", not per-encounter
+  const [clusterDetails, setClusterDetails] = useState<ClusterPromptDetails | null>(null);
+  const [clusterLoading, setClusterLoading] = useState(false);
 
   const phraseById = useMemo(() => new Map(phrases.map((p) => [p.id, p])), [phrases]);
+  const currentPromptId = queue?.[index]?.type === "cluster" ? queue[index].promptId : undefined;
+
+  // Cluster encounters need one extra fetch (situation text + full cluster
+  // membership) that the other encounter types don't -- the queue only
+  // carries a promptId, not the resolved details.
+  useEffect(() => {
+    if (!currentPromptId) {
+      setClusterDetails(null);
+      return;
+    }
+    let cancelled = false;
+    setClusterLoading(true);
+    getClusterPromptDetails(currentPromptId)
+      .then((details) => {
+        if (!cancelled) setClusterDetails(details);
+      })
+      .catch((e) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+      })
+      .finally(() => {
+        if (!cancelled) setClusterLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [currentPromptId]);
 
   // React 18 StrictMode double-invokes this effect in dev specifically to
   // catch exactly this class of bug: two invocations racing past
@@ -187,6 +219,14 @@ export default function SessionRunner({
   const phrase = phraseById.get(encounter.phraseId);
   if (!phrase) return null; // defensive -- shouldn't happen, don't crash the run
 
+  if (encounter.type === "cluster" && (clusterLoading || !clusterDetails)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="font-body text-gray-500">Loading...</p>
+      </div>
+    );
+  }
+
   const progressOverride = {
     label: ENCOUNTER_LABELS[encounter.type],
     current: index + 1,
@@ -272,5 +312,29 @@ export default function SessionRunner({
           progressOverride={progressOverride}
         />
       );
+    case "cluster": {
+      // clusterDetails is guaranteed non-null here (checked above), and
+      // memberPhraseIds resolves against this unit's own phrases -- Nests
+      // clusters are authored within one unit (see docs/nests-draft.md).
+      const details = clusterDetails!;
+      const distractorPool = details.memberPhraseIds
+        .map((id) => phraseById.get(id))
+        .filter((p): p is PhraseWithCreature => !!p);
+      return (
+        <>
+          {heartsRow}
+          <Cluster
+            situationEn={details.situationEn}
+            target={phrase}
+            distractorPool={distractorPool}
+            profile={profile}
+            unitSlug={unitSlug}
+            onDone={handleGraded}
+            onExit={onExit}
+            progressOverride={progressOverride}
+          />
+        </>
+      );
+    }
   }
 }

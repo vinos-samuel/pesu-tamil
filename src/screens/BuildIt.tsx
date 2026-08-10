@@ -3,6 +3,7 @@ import { audioUrl, recomputeMasteryState, logAttempt } from "../lib/queries";
 import { playAudio } from "../lib/playAudio";
 import Creature, { UNIT_HUES } from "../components/Creature";
 import QuestProgress from "../components/QuestProgress";
+import ReshowFlag from "../components/ReshowFlag";
 import { correctCopy, buildItTryAgainCopy } from "../lib/copy";
 import {
   parseWordGloss,
@@ -167,6 +168,8 @@ export default function BuildIt({
           );
         })}
       </div>
+
+      {!checked && <ReshowFlag profileId={profile.id} phraseId={phrase.id} />}
 
       {checked && (
         <div className="flex flex-col items-center gap-3">
