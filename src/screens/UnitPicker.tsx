@@ -14,10 +14,12 @@ export default function UnitPicker({
   profile,
   onPick,
   onExit,
+  onSanctuary,
 }: {
   profile: Profile;
   onPick: (unit: UnitWithReadiness) => void;
   onExit: () => void;
+  onSanctuary: () => void;
 }) {
   const [units, setUnits] = useState<UnitWithReadiness[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +43,13 @@ export default function UnitPicker({
       <h1 className="font-display text-4xl text-teal-700">
         Which quest, {profile.name}?
       </h1>
+
+      <button
+        onClick={onSanctuary}
+        className="rounded-full bg-teal-100 px-4 py-1.5 font-body text-sm font-semibold text-teal-700 hover:bg-teal-300"
+      >
+        🏛️ My Sanctuary
+      </button>
 
       {loading && <p className="text-gray-500">Loading units...</p>}
       {error && <p className="max-w-md text-center text-red-600">{error}</p>}

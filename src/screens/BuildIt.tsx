@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import { audioUrl, bumpProgress, logAttempt } from "../lib/queries";
 import { playAudio } from "../lib/playAudio";
+import Creature, { UNIT_HUES } from "../components/Creature";
+import QuestProgress from "../components/QuestProgress";
+import { correctCopy, buildItTryAgainCopy } from "../lib/copy";
 import {
-  creatureEmoji,
   parseWordGloss,
   type PhraseWithCreature,
   type Profile,
@@ -20,11 +22,13 @@ function shuffle<T>(arr: T[]): T[] {
 export default function BuildIt({
   phrases,
   profile,
+  unitSlug,
   onDone,
   onExit,
 }: {
   phrases: PhraseWithCreature[]; // already filtered to Build-it-eligible
   profile: Profile;
+  unitSlug: string;
   onDone: (correctCount: number) => void;
   onExit: () => void;
 }) {
@@ -32,8 +36,10 @@ export default function BuildIt({
   const [picked, setPicked] = useState<number[]>([]); // indices into `words`, in tap order
   const [checked, setChecked] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
+  const [resultCopy, setResultCopy] = useState("");
 
   const phrase = phrases[index];
+  const hueBase = UNIT_HUES[unitSlug] ?? 178;
   const words = useMemo(() => parseWordGloss(phrase.word_gloss), [phrase.id]);
   const order = useMemo(
     () => shuffle(words.map((_, i) => i)),
@@ -60,9 +66,13 @@ export default function BuildIt({
   async function finish(finalPicked: number[]) {
     setChecked(true);
     const correct = finalPicked.every((wordIdx, slot) => wordIdx === slot);
+    const species = phrase.creature?.species;
     if (correct) {
       setCorrectCount((c) => c + 1);
+      setResultCopy(correctCopy(species));
       if (phrase.audio_path) playAudio(audioUrl(phrase.audio_path));
+    } else {
+      setResultCopy(buildItTryAgainCopy(species));
     }
     await logAttempt({
       profile_id: profile.id,
@@ -76,6 +86,7 @@ export default function BuildIt({
   function next() {
     setPicked([]);
     setChecked(false);
+    setResultCopy("");
     if (index + 1 < phrases.length) {
       setIndex(index + 1);
     } else {
@@ -92,12 +103,10 @@ export default function BuildIt({
         ← Exit
       </button>
 
-      <p className="font-body text-gray-500">
-        Build-it {index + 1} / {phrases.length}
-      </p>
+      <QuestProgress label="Put the words in order!" current={index + 1} total={phrases.length} />
 
-      <div className="flex h-24 w-24 items-center justify-center rounded-full bg-marigold-100 text-4xl shadow">
-        {creatureEmoji(phrase.creature?.species)}
+      <div className="flex h-24 w-24 items-center justify-center rounded-full bg-marigold-100 shadow">
+        <Creature slug={phrase.slug} hueBase={hueBase} size={64} />
       </div>
 
       <p className="font-display text-2xl text-teal-700">
@@ -156,10 +165,10 @@ export default function BuildIt({
       {checked && (
         <div className="flex flex-col items-center gap-3">
           {isCorrect ? (
-            <p className="font-body text-gray-600">That's the order! 🎉 (hear it above)</p>
+            <p className="font-body text-gray-600">{resultCopy} (hear it above)</p>
           ) : (
             <>
-              <p className="font-body text-gray-600">Close -- here's the right order:</p>
+              <p className="font-body text-gray-600">{resultCopy} Here's the right order:</p>
               <div className="flex gap-3">
                 {words.map((w, i) => (
                   <span

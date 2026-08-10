@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import type { Creature, Phrase, PhraseWithCreature, Unit } from "./types";
+import type { Creature, Phrase, PhraseWithCreature, Tip, Unit } from "./types";
 
 export async function getUnitBySlug(slug: string): Promise<Unit> {
   const { data, error } = await supabase
@@ -55,13 +55,23 @@ export async function getPhrasesWithCreatures(
     .in("phrase_id", (phrases as Phrase[]).map((p) => p.id));
   if (cErr) throw cErr;
 
+  const { data: tips, error: tErr } = await supabase
+    .from("tips")
+    .select("id, unit_id, phrase_id, title, body")
+    .eq("unit_id", unitId);
+  if (tErr) throw tErr;
+
   const creatureByPhraseId = new Map<string, Creature>(
     (creatures as Creature[]).map((c) => [c.phrase_id, c])
+  );
+  const tipByPhraseId = new Map<string, Tip>(
+    (tips as Tip[]).filter((t) => t.phrase_id).map((t) => [t.phrase_id as string, t])
   );
 
   return (phrases as Phrase[]).map((p) => ({
     ...p,
     creature: creatureByPhraseId.get(p.id) ?? null,
+    tip: tipByPhraseId.get(p.id) ?? null,
   }));
 }
 
@@ -134,7 +144,13 @@ export type RecordingRow = {
   self_grade: boolean | null;
   parent_grade: boolean | null;
   recording_path: string;
-  phrases: { english: string; tamil_romanized: string; audio_path: string | null } | null;
+  phrases: {
+    english: string;
+    tamil_romanized: string;
+    audio_path: string | null;
+    slug: string;
+    units: { slug: string } | null;
+  } | null;
   profiles: { name: string } | null;
 };
 
@@ -143,7 +159,7 @@ export async function getRecentRecordings(limit = 50): Promise<RecordingRow[]> {
   const { data, error } = await supabase
     .from("attempts")
     .select(
-      "id, created_at, self_grade, parent_grade, recording_path, phrases(english, tamil_romanized, audio_path), profiles(name)"
+      "id, created_at, self_grade, parent_grade, recording_path, phrases(english, tamil_romanized, audio_path, slug, units(slug)), profiles(name)"
     )
     .eq("tier", "say-it")
     .not("recording_path", "is", null)
@@ -159,4 +175,106 @@ export async function setParentGrade(attemptId: string, grade: boolean | null) {
     .update({ parent_grade: grade })
     .eq("id", attemptId);
   if (error) throw error;
+}
+
+export type DashboardStats = {
+  streak: number;
+  totalXp: number;
+  sessionsThisWeek: number;
+  creaturesTamed: number;
+};
+
+/** Stats for the parent dashboard's stat row. Single-family v1 -- reads the
+ * first-created profile (Savyr). Revisit if a sibling profile joins and the
+ * dashboard needs a per-kid picker. */
+export async function getDashboardStats(): Promise<DashboardStats> {
+  const { data: profiles, error: pErr } = await supabase
+    .from("profiles")
+    .select("id, streak_count, total_xp")
+    .order("created_at", { ascending: true })
+    .limit(1);
+  if (pErr) throw pErr;
+  const profile = profiles?.[0];
+  if (!profile) return { streak: 0, totalXp: 0, sessionsThisWeek: 0, creaturesTamed: 0 };
+
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: attempts, error: aErr } = await supabase
+    .from("attempts")
+    .select("created_at")
+    .eq("profile_id", profile.id)
+    .gte("created_at", sevenDaysAgo);
+  if (aErr) throw aErr;
+  const days = new Set(
+    (attempts as { created_at: string }[]).map((a) => new Date(a.created_at).toDateString())
+  );
+
+  const { count, error: cErr } = await supabase
+    .from("progress")
+    .select("id", { count: "exact", head: true })
+    .eq("profile_id", profile.id);
+  if (cErr) throw cErr;
+
+  return {
+    streak: profile.streak_count,
+    totalXp: profile.total_xp,
+    sessionsThisWeek: days.size,
+    creaturesTamed: count ?? 0,
+  };
+}
+
+export type SanctuaryPhrase = {
+  id: string;
+  slug: string;
+  english: string;
+  audio_path: string | null;
+  unitSlug: string;
+  tamed: boolean;
+};
+
+/** Every phrase across every unit, flagged tamed/wild for the Sanctuary
+ * screen. "Tamed" = has a `progress` row for this profile -- i.e. the kid
+ * has genuinely used it (Recognize/Build-it), not just heard it once in
+ * Learn. */
+export async function getSanctuaryData(
+  profileId: string
+): Promise<{ units: { slug: string; title: string }[]; phrases: SanctuaryPhrase[] }> {
+  const { data: units, error: uErr } = await supabase
+    .from("units")
+    .select("id, slug, title, number")
+    .order("number", { ascending: true });
+  if (uErr) throw uErr;
+
+  const { data: phrases, error: pErr } = await supabase
+    .from("phrases")
+    .select("id, unit_id, slug, english, audio_path, seq")
+    .order("seq", { ascending: true });
+  if (pErr) throw pErr;
+
+  const { data: progress, error: prErr } = await supabase
+    .from("progress")
+    .select("phrase_id")
+    .eq("profile_id", profileId);
+  if (prErr) throw prErr;
+
+  const tamedSet = new Set((progress as { phrase_id: string }[]).map((r) => r.phrase_id));
+  const unitById = new Map((units as { id: string; slug: string; title: string }[]).map((u) => [u.id, u]));
+
+  const mapped = (
+    phrases as { id: string; unit_id: string; slug: string; english: string; audio_path: string | null }[]
+  ).map((p) => {
+    const u = unitById.get(p.unit_id)!;
+    return {
+      id: p.id,
+      slug: p.slug,
+      english: p.english,
+      audio_path: p.audio_path,
+      unitSlug: u.slug,
+      tamed: tamedSet.has(p.id),
+    };
+  });
+
+  return {
+    units: (units as { slug: string; title: string }[]).map((u) => ({ slug: u.slug, title: u.title })),
+    phrases: mapped,
+  };
 }

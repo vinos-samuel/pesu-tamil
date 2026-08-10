@@ -1,7 +1,10 @@
 import { useMemo, useState } from "react";
 import { audioUrl, bumpProgress, logAttempt } from "../lib/queries";
 import { playAudio } from "../lib/playAudio";
-import { creatureEmoji, type PhraseWithCreature, type Profile } from "../lib/types";
+import Creature, { UNIT_HUES } from "../components/Creature";
+import QuestProgress from "../components/QuestProgress";
+import { correctCopy, recognizeIncorrectCopy } from "../lib/copy";
+import type { PhraseWithCreature, Profile } from "../lib/types";
 
 function shuffle<T>(arr: T[]): T[] {
   const copy = [...arr];
@@ -15,11 +18,13 @@ function shuffle<T>(arr: T[]): T[] {
 export default function Recognize({
   phrases,
   profile,
+  unitSlug,
   onDone,
   onExit,
 }: {
   phrases: PhraseWithCreature[];
   profile: Profile;
+  unitSlug: string;
   onDone: (correctCount: number) => void;
   onExit: () => void;
 }) {
@@ -29,8 +34,10 @@ export default function Recognize({
   const [correctCount, setCorrectCount] = useState(0);
   const [previewed, setPreviewed] = useState<string | null>(null); // listened to, not yet committed
   const [picked, setPicked] = useState<string | null>(null); // committed answer
+  const [resultCopy, setResultCopy] = useState("");
 
   const target = order[index];
+  const hueBase = UNIT_HUES[unitSlug] ?? 178;
 
   const options = useMemo(() => {
     const others = phrases.filter((p) => p.id !== target.id);
@@ -49,8 +56,14 @@ export default function Recognize({
     if (!previewed || picked) return;
     setPicked(previewed);
     const correct = previewed === target.id;
-    if (correct) setCorrectCount((c) => c + 1);
-    else setHearts((h) => Math.max(0, h - 1));
+    const species = target.creature?.species;
+    if (correct) {
+      setCorrectCount((c) => c + 1);
+      setResultCopy(correctCopy(species));
+    } else {
+      setHearts((h) => Math.max(0, h - 1));
+      setResultCopy(recognizeIncorrectCopy(species, target.english));
+    }
 
     await logAttempt({
       profile_id: profile.id,
@@ -66,6 +79,7 @@ export default function Recognize({
       setIndex(index + 1);
       setPreviewed(null);
       setPicked(null);
+      setResultCopy("");
     } else {
       onDone(correctCount);
     }
@@ -80,10 +94,17 @@ export default function Recognize({
         ← Exit
       </button>
 
-      <p className="font-body text-gray-500">
-        Recognize {index + 1} / {order.length} · {"❤️".repeat(hearts)}
+      <QuestProgress label="Guess who's calling!" current={index + 1} total={order.length} />
+
+      <p className="text-lg" aria-hidden="true">
+        {"❤️".repeat(hearts)}
         {"🤍".repeat(3 - hearts)}
       </p>
+      {hearts === 0 && (
+        <p className="-mt-4 text-xs text-gray-400">
+          Still learning this one — every try counts. Keep going! 💪
+        </p>
+      )}
 
       <p className="font-display text-2xl text-teal-700">
         Which one means "{target.english}"?
@@ -105,9 +126,9 @@ export default function Recognize({
             <button
               key={opt.id}
               onClick={() => preview(opt)}
-              className={`flex h-28 w-28 items-center justify-center rounded-3xl bg-marigold-100 text-5xl shadow transition hover:scale-105 active:scale-95 ${ring}`}
+              className={`flex h-28 w-28 items-center justify-center rounded-3xl bg-marigold-100 shadow transition hover:scale-105 active:scale-95 ${ring}`}
             >
-              {creatureEmoji(opt.creature?.species)}
+              <Creature slug={opt.slug} hueBase={hueBase} size={80} />
             </button>
           );
         })}
@@ -125,11 +146,7 @@ export default function Recognize({
 
       {picked && (
         <div className="flex flex-col items-center gap-3">
-          <p className="font-body text-gray-600">
-            {picked === target.id
-              ? "Correct! 🎉"
-              : `Not quite -- that was "${target.english}"`}
-          </p>
+          <p className="font-body text-gray-600">{resultCopy}</p>
           <button
             onClick={next}
             className="rounded-full bg-marigold-500 px-8 py-3 font-display text-white shadow hover:bg-marigold-700"

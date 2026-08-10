@@ -1,23 +1,29 @@
 import { useState } from "react";
 import { audioUrl, logAttempt } from "../lib/queries";
 import { playAudio } from "../lib/playAudio";
-import { creatureEmoji, type PhraseWithCreature, type Profile } from "../lib/types";
+import Creature, { UNIT_HUES } from "../components/Creature";
+import QuestProgress from "../components/QuestProgress";
+import type { PhraseWithCreature, Profile } from "../lib/types";
 
 export default function Learn({
   phrases,
   profile,
+  unitSlug,
   onDone,
   onExit,
 }: {
   phrases: PhraseWithCreature[];
   profile: Profile;
+  unitSlug: string;
   onDone: () => void;
   onExit: () => void;
 }) {
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [playError, setPlayError] = useState(false);
+  const [showTip, setShowTip] = useState(false);
   const phrase = phrases[index];
+  const hueBase = UNIT_HUES[unitSlug] ?? 178;
 
   function play() {
     if (!phrase.audio_path) return;
@@ -36,6 +42,7 @@ export default function Learn({
       setIndex(index + 1);
       setRevealed(false);
       setPlayError(false);
+      setShowTip(false);
     } else {
       onDone();
     }
@@ -50,16 +57,14 @@ export default function Learn({
         ← Exit
       </button>
 
-      <p className="font-body text-gray-500">
-        Learn {index + 1} / {phrases.length}
-      </p>
+      <QuestProgress label="Getting to know your creatures" current={index + 1} total={phrases.length} />
 
       <button
         onClick={play}
-        className="flex h-40 w-40 items-center justify-center rounded-full bg-marigold-100 text-7xl shadow-lg transition hover:scale-105 active:scale-95"
+        className="flex h-40 w-40 items-center justify-center rounded-full bg-marigold-100 shadow-lg transition hover:scale-105 active:scale-95"
         aria-label={revealed ? "Play sound again" : "Play sound"}
       >
-        {creatureEmoji(phrase.creature?.species)}
+        <Creature slug={phrase.slug} hueBase={hueBase} size={104} />
       </button>
 
       <p className="font-body text-sm text-gray-500">
@@ -72,10 +77,23 @@ export default function Learn({
         </p>
       )}
 
-      <div className="h-8">
+      <div className="flex min-h-[2rem] flex-col items-center gap-2">
         {revealed && (
           <p className="font-display text-2xl text-teal-700">
             {phrase.english}
+          </p>
+        )}
+        {revealed && phrase.tip && !showTip && (
+          <button
+            onClick={() => setShowTip(true)}
+            className="text-xs text-marigold-700 underline hover:text-marigold-900"
+          >
+            💡 {phrase.tip.title}
+          </button>
+        )}
+        {revealed && phrase.tip && showTip && (
+          <p className="max-w-xs font-body text-xs text-gray-500">
+            💡 {phrase.tip.body}
           </p>
         )}
       </div>

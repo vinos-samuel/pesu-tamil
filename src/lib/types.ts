@@ -34,19 +34,15 @@ export type Creature = {
   level: number;
 };
 
-export type PhraseWithCreature = Phrase & { creature: Creature | null };
-
-const SPECIES_EMOJI: Record<string, string> = {
-  peacock: "🦚",
-  jasmine: "🌸",
-  flame: "🔥",
-  horns: "🐐",
-  otter: "🦦",
+export type Tip = {
+  id: string;
+  unit_id: string | null;
+  phrase_id: string | null;
+  title: string;
+  body: string;
 };
 
-export function creatureEmoji(species: string | undefined): string {
-  return (species && SPECIES_EMOJI[species]) || "🥚";
-}
+export type PhraseWithCreature = Phrase & { creature: Creature | null; tip: Tip | null };
 
 /** Parses "thanni = water, vaenum = want" into [{tamil:"thanni", english:"water"}, ...],
  * in the same order as the spoken phrase. Returns [] if not parseable. */

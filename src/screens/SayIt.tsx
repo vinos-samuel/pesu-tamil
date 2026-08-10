@@ -2,18 +2,23 @@ import { useState } from "react";
 import { audioUrl, logAttempt } from "../lib/queries";
 import { playAudio } from "../lib/playAudio";
 import { startRecording, uploadRecording, type Recorder } from "../lib/recording";
-import { creatureEmoji, type PhraseWithCreature, type Profile } from "../lib/types";
+import Creature, { UNIT_HUES } from "../components/Creature";
+import QuestProgress from "../components/QuestProgress";
+import { heardCopy } from "../lib/copy";
+import type { PhraseWithCreature, Profile } from "../lib/types";
 
 type Stage = "idle" | "recording" | "recorded" | "graded";
 
 export default function SayIt({
   phrases,
   profile,
+  unitSlug,
   onDone,
   onExit,
 }: {
   phrases: PhraseWithCreature[];
   profile: Profile;
+  unitSlug: string;
   onDone: (attemptedCount: number) => void;
   onExit: () => void;
 }) {
@@ -24,8 +29,10 @@ export default function SayIt({
   const [micBlocked, setMicBlocked] = useState(false);
   const [attempted, setAttempted] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [gradedCopy, setGradedCopy] = useState("");
 
   const phrase = phrases[index];
+  const hueBase = UNIT_HUES[unitSlug] ?? 178;
 
   function playNative() {
     if (phrase.audio_path) playAudio(audioUrl(phrase.audio_path));
@@ -81,6 +88,7 @@ export default function SayIt({
     } finally {
       setBusy(false);
       setAttempted((c) => c + 1);
+      setGradedCopy(heardCopy(phrase.creature?.species));
       setStage("graded");
     }
   }
@@ -105,12 +113,10 @@ export default function SayIt({
         ← Exit
       </button>
 
-      <p className="font-body text-gray-500">
-        Say-it {index + 1} / {phrases.length}
-      </p>
+      <QuestProgress label="Your turn to say it!" current={index + 1} total={phrases.length} />
 
-      <div className="flex h-32 w-32 items-center justify-center rounded-full bg-marigold-100 text-6xl shadow">
-        {creatureEmoji(phrase.creature?.species)}
+      <div className="flex h-32 w-32 items-center justify-center rounded-full bg-marigold-100 shadow">
+        <Creature slug={phrase.slug} hueBase={hueBase} size={84} />
       </div>
 
       <p className="font-display text-2xl text-teal-700">
@@ -211,7 +217,7 @@ export default function SayIt({
                 </div>
               ) : (
                 <>
-                  <p className="font-body text-gray-600">Nice -- I heard you! 👂</p>
+                  <p className="font-body text-gray-600">{gradedCopy}</p>
                   <button
                     onClick={next}
                     className="rounded-full bg-marigold-500 px-8 py-3 font-display text-white shadow hover:bg-marigold-700"

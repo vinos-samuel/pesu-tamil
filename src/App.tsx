@@ -8,11 +8,13 @@ import SayIt from "./screens/SayIt";
 import BuildIt from "./screens/BuildIt";
 import ParentDashboard from "./screens/ParentDashboard";
 import UnitPicker from "./screens/UnitPicker";
+import Sanctuary from "./screens/Sanctuary";
 
 type Screen =
   | "picker"
   | "parent"
   | "units"
+  | "sanctuary"
   | "intro"
   | "learn"
   | "recognize"
@@ -32,6 +34,7 @@ export default function App() {
 
   const [screen, setScreen] = useState<Screen>("picker");
   const [unitTitle, setUnitTitle] = useState("");
+  const [unitSlug, setUnitSlug] = useState("");
   const [phrases, setPhrases] = useState<PhraseWithCreature[]>([]);
   const [recognizeCorrect, setRecognizeCorrect] = useState(0);
   const [sayItCount, setSayItCount] = useState(0);
@@ -80,6 +83,7 @@ export default function App() {
 
   async function pickUnit(unit: UnitWithReadiness) {
     setUnitTitle(unit.title);
+    setUnitSlug(unit.slug);
     const withCreatures = await getPhrasesWithCreatures(unit.id);
     setPhrases(withCreatures);
     setScreen("intro");
@@ -224,7 +228,19 @@ export default function App() {
 
   // -- Unit picker -----------------------------------------------------------
   if (screen === "units" && profile) {
-    return <UnitPicker profile={profile} onPick={pickUnit} onExit={backToPicker} />;
+    return (
+      <UnitPicker
+        profile={profile}
+        onPick={pickUnit}
+        onExit={backToPicker}
+        onSanctuary={() => setScreen("sanctuary")}
+      />
+    );
+  }
+
+  // -- Sanctuary (creature collection) ----------------------------------------
+  if (screen === "sanctuary" && profile) {
+    return <Sanctuary profile={profile} onExit={() => setScreen("units")} />;
   }
 
   // -- Unit intro ------------------------------------------------------------
@@ -257,6 +273,7 @@ export default function App() {
       <Learn
         phrases={phrases}
         profile={profile}
+        unitSlug={unitSlug}
         onDone={() => setScreen("recognize")}
         onExit={backToUnits}
       />
@@ -269,6 +286,7 @@ export default function App() {
       <Recognize
         phrases={phrases}
         profile={profile}
+        unitSlug={unitSlug}
         onDone={finishRecognize}
         onExit={backToUnits}
       />
@@ -278,7 +296,13 @@ export default function App() {
   // -- Say-it --------------------------------------------------------------
   if (screen === "sayit" && profile) {
     return (
-      <SayIt phrases={phrases} profile={profile} onDone={finishSayIt} onExit={backToUnits} />
+      <SayIt
+        phrases={phrases}
+        profile={profile}
+        unitSlug={unitSlug}
+        onDone={finishSayIt}
+        onExit={backToUnits}
+      />
     );
   }
 
@@ -289,6 +313,7 @@ export default function App() {
       <BuildIt
         phrases={eligible}
         profile={profile}
+        unitSlug={unitSlug}
         onDone={finishBuildIt}
         onExit={backToUnits}
       />
