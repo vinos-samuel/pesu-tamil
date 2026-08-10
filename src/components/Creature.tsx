@@ -80,6 +80,21 @@ function traits(slug: string, hueBase: number): Traits {
   };
 }
 
+/** Fixed, slug-independent -- deliberately NOT derived from any phrase.
+ * Used by `mystery` so a not-yet-revealed option can't be shape-matched
+ * against a creature the kid already saw elsewhere (see Recognize's
+ * pre-commit options). Distinct from `wild`, which stays slug-shaped on
+ * purpose (Sanctuary's silhouette-anticipation) -- these two "unknown"
+ * looks must never be visually confused with each other. */
+const MYSTERY_TRAITS: Traits = {
+  body: "round",
+  crest: "pompom",
+  eyes: "sleepy",
+  mouth: "smile",
+  hue: 250, // soft indigo -- distinct from wild's warm grey-beige
+  flip: false,
+};
+
 function bodyPath(kind: Traits["body"]): string {
   switch (kind) {
     case "blob":
@@ -290,16 +305,26 @@ export default function Creature({
   slug,
   hueBase,
   wild = false,
+  mystery = false,
   size = 96,
   className,
 }: {
-  slug: string;
-  hueBase: number;
+  /** Required unless `mystery` is true. */
+  slug?: string;
+  /** Required unless `mystery` is true. */
+  hueBase?: number;
   wild?: boolean;
+  /** Not-yet-revealed placeholder -- fixed look, ignores `slug` entirely
+   * (skips the traits() derivation, doesn't just override its output).
+   * Takes precedence over `wild` if both are somehow passed. */
+  mystery?: boolean;
   size?: number;
   className?: string;
 }) {
-  const t = useMemo(() => traits(slug, hueBase), [slug, hueBase]);
+  const t = useMemo(
+    () => (mystery ? MYSTERY_TRAITS : traits(slug ?? "", hueBase ?? 0)),
+    [mystery, slug, hueBase]
+  );
   const bodyFill = wild ? "#d8d0bd" : hsl(t.hue, 62, 58);
   const outline = wild ? "#c2b8a1" : hsl(t.hue, 55, 34);
 

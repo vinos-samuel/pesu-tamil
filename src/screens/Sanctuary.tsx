@@ -38,10 +38,12 @@ export default function Sanctuary({
   }, [profile.id]);
 
   function tapCreature(p: SanctuaryPhrase) {
-    if (p.tamed && p.audio_path) playAudio(audioUrl(p.audio_path));
+    // Following creatures are met, just not mastered yet -- still worth a
+    // replay. Only wild (never engaged) stays silent.
+    if (p.state !== "wild" && p.audio_path) playAudio(audioUrl(p.audio_path));
   }
 
-  const tamedCount = phrases.filter((p) => p.tamed).length;
+  const tamedCount = phrases.filter((p) => p.state === "tamed").length;
   const pct = phrases.length ? Math.round((tamedCount / phrases.length) * 100) : 0;
 
   return (
@@ -92,7 +94,7 @@ export default function Sanctuary({
           units.map((u) => {
             const unitPhrases = phrases.filter((p) => p.unitSlug === u.slug);
             const hueBase = UNIT_HUES[u.slug] ?? 178;
-            const unitTamed = unitPhrases.filter((p) => p.tamed).length;
+            const unitTamed = unitPhrases.filter((p) => p.state === "tamed").length;
             return (
               <div key={u.slug} id={`sanctuary-${u.slug}`} className="w-full scroll-mt-6">
                 <div className="mb-3 flex items-baseline justify-between">
@@ -108,15 +110,30 @@ export default function Sanctuary({
                     <button
                       key={p.id}
                       onClick={() => tapCreature(p)}
-                      disabled={!p.tamed}
-                      title={p.tamed ? p.english : "Not tamed yet"}
+                      disabled={p.state === "wild"}
+                      title={
+                        p.state === "tamed"
+                          ? p.english
+                          : p.state === "following"
+                          ? `${p.english} (still following you)`
+                          : "Not tamed yet"
+                      }
                       className={`flex aspect-square items-center justify-center rounded-2xl shadow-sm transition ${
-                        p.tamed
-                          ? "bg-white hover:scale-105 active:scale-95"
-                          : "cursor-default bg-gray-100"
+                        p.state === "wild"
+                          ? "cursor-default bg-gray-100"
+                          : "bg-white hover:scale-105 active:scale-95"
                       }`}
                     >
-                      <Creature slug={p.slug} hueBase={hueBase} wild={!p.tamed} size={56} />
+                      <Creature
+                        slug={p.slug}
+                        hueBase={hueBase}
+                        wild={p.state === "wild"}
+                        size={56}
+                        // Following = met but not mastered -- full color,
+                        // dimmed, so it reads as "on its way" rather than
+                        // fully caught. Tamed = full opacity.
+                        className={p.state === "following" ? "opacity-55" : undefined}
+                      />
                     </button>
                   ))}
                 </div>

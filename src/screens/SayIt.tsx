@@ -15,12 +15,14 @@ export default function SayIt({
   unitSlug,
   onDone,
   onExit,
+  progressOverride,
 }: {
   phrases: PhraseWithCreature[];
   profile: Profile;
   unitSlug: string;
   onDone: (attemptedCount: number) => void;
   onExit: () => void;
+  progressOverride?: { label: string; current: number; total: number };
 }) {
   const [index, setIndex] = useState(0);
   const [stage, setStage] = useState<Stage>("idle");
@@ -113,7 +115,11 @@ export default function SayIt({
         ← Exit
       </button>
 
-      <QuestProgress label="Your turn to say it!" current={index + 1} total={phrases.length} />
+      <QuestProgress
+        label={progressOverride?.label ?? "Your turn to say it!"}
+        current={progressOverride?.current ?? index + 1}
+        total={progressOverride?.total ?? phrases.length}
+      />
 
       <div className="flex h-32 w-32 items-center justify-center rounded-full bg-marigold-100 shadow">
         <Creature slug={phrase.slug} hueBase={hueBase} size={84} />

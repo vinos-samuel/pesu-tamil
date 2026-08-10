@@ -11,12 +11,16 @@ export default function Learn({
   unitSlug,
   onDone,
   onExit,
+  progressOverride,
 }: {
   phrases: PhraseWithCreature[];
   profile: Profile;
   unitSlug: string;
   onDone: () => void;
   onExit: () => void;
+  /** SessionRunner passes this when mounting a single-phrase encounter, so
+   * the bar shows "3 of 7" (position in the run) instead of "1 of 1". */
+  progressOverride?: { label: string; current: number; total: number };
 }) {
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -57,7 +61,11 @@ export default function Learn({
         ← Exit
       </button>
 
-      <QuestProgress label="Getting to know your creatures" current={index + 1} total={phrases.length} />
+      <QuestProgress
+        label={progressOverride?.label ?? "Getting to know your creatures"}
+        current={progressOverride?.current ?? index + 1}
+        total={progressOverride?.total ?? phrases.length}
+      />
 
       <button
         onClick={play}

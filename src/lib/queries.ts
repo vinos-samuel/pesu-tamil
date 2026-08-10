@@ -1,5 +1,7 @@
 import { supabase } from "./supabase";
+import { isBuildItEligible } from "./types";
 import type { Creature, Phrase, PhraseWithCreature, Tip, Unit } from "./types";
+import type { Encounter, GradableTier, PhraseSchedulingInfo } from "./scheduler";
 
 export async function getUnitBySlug(slug: string): Promise<Unit> {
   const { data, error } = await supabase
@@ -83,7 +85,7 @@ export function audioUrl(audio_path: string): string {
 export async function logAttempt(params: {
   profile_id: string;
   phrase_id: string;
-  tier: "learn" | "recognize" | "say-it" | "build-it";
+  tier: "learn" | "recognize" | "reverse-recognize" | "say-it" | "build-it";
   correct?: boolean | null;
   self_grade?: boolean | null;
   recording_path?: string | null;
@@ -99,43 +101,94 @@ export async function logAttempt(params: {
   if (error) throw error;
 }
 
-/** Minimal progress upsert -- just tallies right/wrong so far. Full SRS
- * scheduling (next_review_at) is a later step, not needed to prove the loop. */
-export async function bumpProgress(params: {
+const GRADED_TIERS = ["recognize", "reverse-recognize", "build-it", "cluster"] as const;
+
+/** Re-derives mastery_state from the full attempt history each call (cheap
+ * at this scale, avoids incremental-tally bugs). Replaces the old
+ * bumpProgress(), which only ever wrote 'learning'/'review' and never
+ * 'mastered' -- three creature states (wild/following/tamed) need a gate
+ * that actually reaches 'mastered'.
+ *
+ * Gate: >=2 correct graded attempts on >=2 distinct calendar days, in >=2
+ * distinct modalities (recognize / reverse-recognize / build-it / cluster),
+ * AND the most recent graded attempt was correct. (Cluster ["adjacent
+ * word"] attempts don't exist until the Nests phase ships -- until then
+ * this clause is naturally harder to hit with only 2 modalities available,
+ * not specially cased.)
+ *
+ * Lapse: a phrase that was 'mastered' and then fails the gate again (i.e.
+ * a fresh wrong answer) drops to 'review', not 'learning' -- "restless,"
+ * not back to square one. A phrase that was never mastered just tracks
+ * last-attempt correctness as before. */
+export async function recomputeMasteryState(params: {
   profile_id: string;
   phrase_id: string;
-  correct: boolean;
 }) {
+  const { data, error } = await supabase
+    .from("attempts")
+    .select("tier, correct, created_at")
+    .eq("profile_id", params.profile_id)
+    .eq("phrase_id", params.phrase_id)
+    .in("tier", GRADED_TIERS)
+    .not("correct", "is", null)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+
+  const graded = data as { tier: string; correct: boolean; created_at: string }[];
+  if (graded.length === 0) return; // nothing graded yet
+
+  const correctAttempts = graded.filter((a) => a.correct);
+  const distinctDays = new Set(correctAttempts.map((a) => new Date(a.created_at).toDateString()));
+  const distinctModalities = new Set(correctAttempts.map((a) => a.tier));
+  const lastCorrect = graded[graded.length - 1].correct === true;
+  const mastered = distinctDays.size >= 2 && distinctModalities.size >= 2 && lastCorrect;
+
   const { data: existing, error: selErr } = await supabase
     .from("progress")
-    .select("id, correct_count, incorrect_count")
+    .select("id, mastery_state")
     .eq("profile_id", params.profile_id)
     .eq("phrase_id", params.phrase_id)
     .maybeSingle();
   if (selErr) throw selErr;
 
+  const wasMastered = existing?.mastery_state === "mastered";
+  const mastery_state = mastered
+    ? "mastered"
+    : wasMastered
+    ? "review" // lapse, not a fresh start
+    : lastCorrect
+    ? "review"
+    : "learning";
+
+  const correct_count = correctAttempts.length;
+  const incorrect_count = graded.length - correctAttempts.length;
+  const daysAhead = mastery_state === "mastered" ? 3 : mastery_state === "review" ? 1 : 0;
+  const next_review_at = new Date(Date.now() + daysAhead * 86400000).toISOString();
+
   if (!existing) {
-    const { error } = await supabase.from("progress").insert({
+    const { error: insErr } = await supabase.from("progress").insert({
       profile_id: params.profile_id,
       phrase_id: params.phrase_id,
-      correct_count: params.correct ? 1 : 0,
-      incorrect_count: params.correct ? 0 : 1,
-      mastery_state: "learning",
+      mastery_state,
+      correct_count,
+      incorrect_count,
+      next_review_at,
     });
-    if (error) throw error;
+    if (insErr) throw insErr;
     return;
   }
 
-  const { error } = await supabase
+  const { error: updErr } = await supabase
     .from("progress")
     .update({
-      correct_count: existing.correct_count + (params.correct ? 1 : 0),
-      incorrect_count: existing.incorrect_count + (params.correct ? 0 : 1),
-      mastery_state: params.correct ? "review" : "learning",
+      mastery_state,
+      correct_count,
+      incorrect_count,
+      next_review_at,
       updated_at: new Date().toISOString(),
     })
     .eq("id", existing.id);
-  if (error) throw error;
+  if (updErr) throw updErr;
 }
 
 export type RecordingRow = {
@@ -222,19 +275,23 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   };
 }
 
+/** wild = never engaged (no `progress` row). following = engaged, not yet
+ * mastered (mastery_state 'learning'/'review'). tamed = mastery_state
+ * 'mastered' -- the real gate, see recomputeMasteryState(). Replaces the
+ * old binary tamed/wild that just checked row-existence. */
+export type CreatureState = "wild" | "following" | "tamed";
+
 export type SanctuaryPhrase = {
   id: string;
   slug: string;
   english: string;
   audio_path: string | null;
   unitSlug: string;
-  tamed: boolean;
+  state: CreatureState;
 };
 
-/** Every phrase across every unit, flagged tamed/wild for the Sanctuary
- * screen. "Tamed" = has a `progress` row for this profile -- i.e. the kid
- * has genuinely used it (Recognize/Build-it), not just heard it once in
- * Learn. */
+/** Every phrase across every unit, with its wild/following/tamed state for
+ * the Sanctuary screen. */
 export async function getSanctuaryData(
   profileId: string
 ): Promise<{ units: { slug: string; title: string }[]; phrases: SanctuaryPhrase[] }> {
@@ -252,11 +309,16 @@ export async function getSanctuaryData(
 
   const { data: progress, error: prErr } = await supabase
     .from("progress")
-    .select("phrase_id")
+    .select("phrase_id, mastery_state")
     .eq("profile_id", profileId);
   if (prErr) throw prErr;
 
-  const tamedSet = new Set((progress as { phrase_id: string }[]).map((r) => r.phrase_id));
+  const stateByPhraseId = new Map<string, CreatureState>(
+    (progress as { phrase_id: string; mastery_state: string }[]).map((r) => [
+      r.phrase_id,
+      r.mastery_state === "mastered" ? "tamed" : "following",
+    ])
+  );
   const unitById = new Map((units as { id: string; slug: string; title: string }[]).map((u) => [u.id, u]));
 
   const mapped = (
@@ -269,7 +331,7 @@ export async function getSanctuaryData(
       english: p.english,
       audio_path: p.audio_path,
       unitSlug: u.slug,
-      tamed: tamedSet.has(p.id),
+      state: stateByPhraseId.get(p.id) ?? "wild",
     };
   });
 
@@ -277,4 +339,129 @@ export async function getSanctuaryData(
     units: (units as { slug: string; title: string }[]).map((u) => ({ slug: u.slug, title: u.title })),
     phrases: mapped,
   };
+}
+
+const GRADABLE_TIERS: GradableTier[] = ["recognize", "reverse-recognize", "build-it"];
+
+/** Derives each phrase's scheduling state from attempts/progress history --
+ * the DB-reading half of the encounter scheduler. buildEncounterQueue()
+ * (src/lib/scheduler.ts) is the pure half that turns this into a queue. */
+export async function getSchedulingInfo(
+  profileId: string,
+  phrases: PhraseWithCreature[]
+): Promise<PhraseSchedulingInfo[]> {
+  const phraseIds = phrases.map((p) => p.id);
+
+  const { data: attempts, error: aErr } = await supabase
+    .from("attempts")
+    .select("phrase_id, tier, correct, created_at")
+    .eq("profile_id", profileId)
+    .in("phrase_id", phraseIds);
+  if (aErr) throw aErr;
+
+  const { data: progressRows, error: pErr } = await supabase
+    .from("progress")
+    .select("phrase_id, mastery_state, next_review_at")
+    .eq("profile_id", profileId)
+    .in("phrase_id", phraseIds);
+  if (pErr) throw pErr;
+
+  type AttemptRow = { phrase_id: string; tier: string; correct: boolean | null; created_at: string };
+  type ProgressRow = { phrase_id: string; mastery_state: string; next_review_at: string | null };
+
+  const attemptsByPhrase = new Map<string, AttemptRow[]>();
+  for (const a of attempts as AttemptRow[]) {
+    const list = attemptsByPhrase.get(a.phrase_id) ?? [];
+    list.push(a);
+    attemptsByPhrase.set(a.phrase_id, list);
+  }
+  const progressByPhrase = new Map(
+    (progressRows as ProgressRow[]).map((r) => [r.phrase_id, r])
+  );
+
+  const now = new Date();
+
+  return phrases.map((p): PhraseSchedulingInfo => {
+    const phraseAttempts = attemptsByPhrase.get(p.id) ?? [];
+    const hasLearned = phraseAttempts.some((a) => a.tier === "learn");
+    const gradedModalitiesCorrect = new Set(
+      phraseAttempts
+        .filter((a) => a.correct && (GRADABLE_TIERS as string[]).includes(a.tier))
+        .map((a) => a.tier as GradableTier)
+    );
+    const prog = progressByPhrase.get(p.id);
+    const mastered = prog?.mastery_state === "mastered";
+    const dueForReview = !!prog?.next_review_at && new Date(prog.next_review_at) <= now;
+    const sayItAttempts = phraseAttempts
+      .filter((a) => a.tier === "say-it")
+      .sort((a, b) => a.created_at.localeCompare(b.created_at));
+    const lastSayItAt = sayItAttempts.length
+      ? sayItAttempts[sayItAttempts.length - 1].created_at
+      : null;
+
+    return {
+      phraseId: p.id,
+      hasLearned,
+      gradedModalitiesCorrect,
+      mastered,
+      dueForReview,
+      buildItEligible: isBuildItEligible(p),
+      hasAudio: !!p.audio_path,
+      lastSayItAt,
+    };
+  });
+}
+
+export type SessionRun = {
+  id: string;
+  profile_id: string;
+  unit_id: string;
+  queue: Encounter[];
+  current_index: number;
+  completed_at: string | null;
+};
+
+/** The kid's in-progress run for this unit, if exiting mid-run left one
+ * resumable. At most one active (completed_at is null) run per profile+unit
+ * is ever created -- callers should check this before building a new queue. */
+export async function getActiveRun(profileId: string, unitId: string): Promise<SessionRun | null> {
+  const { data, error } = await supabase
+    .from("session_runs")
+    .select("id, profile_id, unit_id, queue, current_index, completed_at")
+    .eq("profile_id", profileId)
+    .eq("unit_id", unitId)
+    .is("completed_at", null)
+    .maybeSingle();
+  if (error) throw error;
+  return data as SessionRun | null;
+}
+
+export async function createRun(
+  profileId: string,
+  unitId: string,
+  queue: Encounter[]
+): Promise<SessionRun> {
+  const { data, error } = await supabase
+    .from("session_runs")
+    .insert({ profile_id: profileId, unit_id: unitId, queue, current_index: 0 })
+    .select("id, profile_id, unit_id, queue, current_index, completed_at")
+    .single();
+  if (error) throw error;
+  return data as SessionRun;
+}
+
+export async function advanceRun(runId: string, nextIndex: number) {
+  const { error } = await supabase
+    .from("session_runs")
+    .update({ current_index: nextIndex, updated_at: new Date().toISOString() })
+    .eq("id", runId);
+  if (error) throw error;
+}
+
+export async function completeRun(runId: string) {
+  const { error } = await supabase
+    .from("session_runs")
+    .update({ completed_at: new Date().toISOString() })
+    .eq("id", runId);
+  if (error) throw error;
 }

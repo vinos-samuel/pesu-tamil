@@ -1,26 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
 import { getPhrasesWithCreatures, type UnitWithReadiness } from "./lib/queries";
-import { isBuildItEligible, type PhraseWithCreature, type Profile } from "./lib/types";
-import Learn from "./screens/Learn";
-import Recognize from "./screens/Recognize";
-import SayIt from "./screens/SayIt";
-import BuildIt from "./screens/BuildIt";
+import type { PhraseWithCreature, Profile } from "./lib/types";
 import ParentDashboard from "./screens/ParentDashboard";
 import UnitPicker from "./screens/UnitPicker";
 import Sanctuary from "./screens/Sanctuary";
+import SessionRunner, { type RunSummary } from "./screens/SessionRunner";
 
-type Screen =
-  | "picker"
-  | "parent"
-  | "units"
-  | "sanctuary"
-  | "intro"
-  | "learn"
-  | "recognize"
-  | "sayit"
-  | "buildit"
-  | "done";
+type Screen = "picker" | "parent" | "units" | "sanctuary" | "intro" | "run" | "done";
 
 const AVATAR_COLORS = ["marigold", "teal"] as const;
 
@@ -33,13 +20,11 @@ export default function App() {
   const [adding, setAdding] = useState(false);
 
   const [screen, setScreen] = useState<Screen>("picker");
+  const [unitId, setUnitId] = useState("");
   const [unitTitle, setUnitTitle] = useState("");
   const [unitSlug, setUnitSlug] = useState("");
   const [phrases, setPhrases] = useState<PhraseWithCreature[]>([]);
-  const [recognizeCorrect, setRecognizeCorrect] = useState(0);
-  const [sayItCount, setSayItCount] = useState(0);
-  const [buildItCorrect, setBuildItCorrect] = useState(0);
-  const [xpGained, setXpGained] = useState(0);
+  const [runSummary, setRunSummary] = useState<RunSummary | null>(null);
 
   async function loadProfiles() {
     setLoading(true);
@@ -82,6 +67,7 @@ export default function App() {
   }
 
   async function pickUnit(unit: UnitWithReadiness) {
+    setUnitId(unit.id);
     setUnitTitle(unit.title);
     setUnitSlug(unit.slug);
     const withCreatures = await getPhrasesWithCreatures(unit.id);
@@ -89,70 +75,22 @@ export default function App() {
     setScreen("intro");
   }
 
-  async function finishRecognize(correctCount: number) {
-    setRecognizeCorrect(correctCount);
-    const xpGain = correctCount * 10;
-    setXpGained((prev) => prev + xpGain);
-    if (profile) {
-      await supabase
-        .from("profiles")
-        .update({ total_xp: profile.total_xp + xpGain })
-        .eq("id", profile.id);
-      setProfile({ ...profile, total_xp: profile.total_xp + xpGain });
-    }
-    setScreen("sayit");
-  }
-
-  async function finishSayIt(attemptedCount: number) {
-    // Say-it is ungraded by design (see PRD) -- flat participation XP, not
-    // tied to self-grade, and it doesn't feed SRS/progress.
-    setSayItCount(attemptedCount);
-    const xpGain = attemptedCount * 5;
-    setXpGained((prev) => prev + xpGain);
-    if (profile) {
-      await supabase
-        .from("profiles")
-        .update({ total_xp: profile.total_xp + xpGain })
-        .eq("id", profile.id);
-      setProfile({ ...profile, total_xp: profile.total_xp + xpGain });
-    }
-    const eligible = phrases.filter(isBuildItEligible);
-    if (eligible.length === 0) {
-      setScreen("done");
-    } else {
-      setScreen("buildit");
-    }
-  }
-
-  async function finishBuildIt(correctCount: number) {
-    setBuildItCorrect(correctCount);
-    const xpGain = correctCount * 10;
-    setXpGained((prev) => prev + xpGain);
-    if (profile) {
-      await supabase
-        .from("profiles")
-        .update({ total_xp: profile.total_xp + xpGain })
-        .eq("id", profile.id);
-    }
+  function finishRun(summary: RunSummary, updatedProfile: Profile) {
+    setRunSummary(summary);
+    setProfile(updatedProfile);
     setScreen("done");
   }
 
   function backToPicker() {
     setProfile(null);
     setScreen("picker");
-    setRecognizeCorrect(0);
-    setSayItCount(0);
-    setBuildItCorrect(0);
-    setXpGained(0);
+    setRunSummary(null);
     loadProfiles();
   }
 
   function backToUnits() {
     setScreen("units");
-    setRecognizeCorrect(0);
-    setSayItCount(0);
-    setBuildItCorrect(0);
-    setXpGained(0);
+    setRunSummary(null);
   }
 
   // -- Picker --------------------------------------------------------------
@@ -255,10 +193,10 @@ export default function App() {
         </button>
         <h1 className="font-display text-4xl text-teal-700">{unitTitle}</h1>
         <p className="font-body text-gray-600">
-          {phrases.length} creatures are waiting to be tamed, {profile?.name}!
+          Your crew is waiting, {profile?.name}!
         </p>
         <button
-          onClick={() => setScreen("learn")}
+          onClick={() => setScreen("run")}
           className="rounded-full bg-marigold-500 px-8 py-3 font-display text-white shadow hover:bg-marigold-700"
         >
           Start →
@@ -267,72 +205,37 @@ export default function App() {
     );
   }
 
-  // -- Learn -------------------------------------------------------------
-  if (screen === "learn" && profile) {
+  // -- Session run (mixed encounters -- Learn/Recognize/Say-it/Build-it) -----
+  if (screen === "run" && profile) {
     return (
-      <Learn
+      <SessionRunner
         phrases={phrases}
         profile={profile}
+        unitId={unitId}
         unitSlug={unitSlug}
-        onDone={() => setScreen("recognize")}
-        onExit={backToUnits}
-      />
-    );
-  }
-
-  // -- Recognize ---------------------------------------------------------
-  if (screen === "recognize" && profile) {
-    return (
-      <Recognize
-        phrases={phrases}
-        profile={profile}
-        unitSlug={unitSlug}
-        onDone={finishRecognize}
-        onExit={backToUnits}
-      />
-    );
-  }
-
-  // -- Say-it --------------------------------------------------------------
-  if (screen === "sayit" && profile) {
-    return (
-      <SayIt
-        phrases={phrases}
-        profile={profile}
-        unitSlug={unitSlug}
-        onDone={finishSayIt}
-        onExit={backToUnits}
-      />
-    );
-  }
-
-  // -- Build-it --------------------------------------------------------------
-  if (screen === "buildit" && profile) {
-    const eligible = phrases.filter(isBuildItEligible);
-    return (
-      <BuildIt
-        phrases={eligible}
-        profile={profile}
-        unitSlug={unitSlug}
-        onDone={finishBuildIt}
+        onDone={finishRun}
         onExit={backToUnits}
       />
     );
   }
 
   // -- Done ----------------------------------------------------------------
-  if (screen === "done") {
-    const buildItTotal = phrases.filter(isBuildItEligible).length;
+  if (screen === "done" && runSummary) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center">
         <h1 className="font-display text-4xl text-marigold-700">
           Quest complete! 🎉
         </h1>
         <p className="font-body text-gray-600">
-          {recognizeCorrect} / {phrases.length} correct · {sayItCount} said out loud
-          {buildItTotal > 0 && <> · {buildItCorrect} / {buildItTotal} built</>}
+          {runSummary.gradedTotal > 0 && (
+            <>
+              {runSummary.gradedCorrect} / {runSummary.gradedTotal} correct
+            </>
+          )}
+          {runSummary.gradedTotal > 0 && runSummary.sayItCount > 0 && " · "}
+          {runSummary.sayItCount > 0 && <>{runSummary.sayItCount} said out loud</>}
         </p>
-        <p className="font-body text-gray-500">+{xpGained} XP</p>
+        <p className="font-body text-gray-500">+{runSummary.xpGained} XP</p>
         <button
           onClick={backToPicker}
           className="mt-4 rounded-full bg-teal-500 px-6 py-2 font-display text-white shadow hover:bg-teal-700"

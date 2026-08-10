@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { audioUrl, bumpProgress, logAttempt } from "../lib/queries";
+import { audioUrl, recomputeMasteryState, logAttempt } from "../lib/queries";
 import { playAudio } from "../lib/playAudio";
 import Creature, { UNIT_HUES } from "../components/Creature";
 import QuestProgress from "../components/QuestProgress";
@@ -25,12 +25,14 @@ export default function BuildIt({
   unitSlug,
   onDone,
   onExit,
+  progressOverride,
 }: {
   phrases: PhraseWithCreature[]; // already filtered to Build-it-eligible
   profile: Profile;
   unitSlug: string;
   onDone: (correctCount: number) => void;
   onExit: () => void;
+  progressOverride?: { label: string; current: number; total: number };
 }) {
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<number[]>([]); // indices into `words`, in tap order
@@ -80,7 +82,7 @@ export default function BuildIt({
       tier: "build-it",
       correct,
     });
-    await bumpProgress({ profile_id: profile.id, phrase_id: phrase.id, correct });
+    await recomputeMasteryState({ profile_id: profile.id, phrase_id: phrase.id });
   }
 
   function next() {
@@ -103,7 +105,11 @@ export default function BuildIt({
         ← Exit
       </button>
 
-      <QuestProgress label="Put the words in order!" current={index + 1} total={phrases.length} />
+      <QuestProgress
+        label={progressOverride?.label ?? "Put the words in order!"}
+        current={progressOverride?.current ?? index + 1}
+        total={progressOverride?.total ?? phrases.length}
+      />
 
       <div className="flex h-24 w-24 items-center justify-center rounded-full bg-marigold-100 shadow">
         <Creature slug={phrase.slug} hueBase={hueBase} size={64} />
