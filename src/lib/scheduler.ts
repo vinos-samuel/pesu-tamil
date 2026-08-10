@@ -92,30 +92,41 @@ export function buildEncounterQueue(
   // to "review" (following) after this attempt comes back wrong.
   const dueReview = withAudio.filter((i) => i.mastered && i.dueForReview);
 
-  const nonSayIt: Encounter[] = [];
+  const remainingSlots = Math.max(0, targetSize - sayItSlots);
 
-  for (const info of doShuffle(never).slice(0, 3)) {
-    nonSayIt.push({ type: "learn", phraseId: info.phraseId });
-  }
+  const otherPool: Encounter[] = [];
   for (const info of doShuffle(learnedNotGraded)) {
     // Alternate direction so both Recognize modalities get seeded early
     // rather than always starting with the same one.
-    const type: GradableTier = nonSayIt.length % 2 === 0 ? "recognize" : "reverse-recognize";
-    nonSayIt.push({ type, phraseId: info.phraseId });
+    const type: GradableTier = otherPool.length % 2 === 0 ? "recognize" : "reverse-recognize";
+    otherPool.push({ type, phraseId: info.phraseId });
   }
   for (const info of doShuffle(oneModality)) {
     const type = missingModality(info);
-    if (type) nonSayIt.push({ type, phraseId: info.phraseId });
+    if (type) otherPool.push({ type, phraseId: info.phraseId });
   }
   for (const info of doShuffle(clusterEligible)) {
-    nonSayIt.push({ type: "cluster", phraseId: info.phraseId, promptId: info.clusterPromptId! });
+    otherPool.push({ type: "cluster", phraseId: info.phraseId, promptId: info.clusterPromptId! });
   }
   for (const info of doShuffle(dueReview)) {
     const type = missingModality(info) ?? "recognize";
-    nonSayIt.push({ type, phraseId: info.phraseId });
+    otherPool.push({ type, phraseId: info.phraseId });
   }
 
-  const remainingSlots = Math.max(0, targetSize - sayItSlots);
+  // Adaptive, not a flat cap: a brand-new unit has nothing in any other
+  // bucket yet (nothing's been learned to grade), so capping "never" at a
+  // small fixed number left most of the run empty -- a fresh unit's first
+  // session was 3 Learn taps and "Quest complete! +0 XP" instead of
+  // anything close to 6-8 encounters (caught live, 2026-08-10). Still
+  // don't let a big backlog of untouched phrases crowd out a run that
+  // already has plenty to review -- floor of 3, but grows to fill
+  // whatever the other buckets don't cover.
+  const neverCount = Math.min(never.length, Math.max(3, remainingSlots - otherPool.length));
+  const learnPool: Encounter[] = doShuffle(never)
+    .slice(0, neverCount)
+    .map((info) => ({ type: "learn" as const, phraseId: info.phraseId }));
+
+  const nonSayIt = [...learnPool, ...otherPool];
   const picked = doShuffle(nonSayIt).slice(0, remainingSlots);
 
   // -- Say-it: independent of every bucket above (no gradable state, not
