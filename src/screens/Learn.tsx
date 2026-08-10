@@ -111,7 +111,11 @@ export default function Learn({
         disabled={!revealed}
         className="rounded-full bg-marigold-500 px-8 py-3 font-display text-white shadow disabled:opacity-30 hover:bg-marigold-700"
       >
-        {index + 1 < phrases.length ? "Next →" : "Start the quiz →"}
+        {/* SessionRunner always mounts one phrase at a time now -- this is
+         * never actually the last screen of the run, just of this
+         * encounter, so it always reads "Continue" rather than guessing
+         * what's next. */}
+        Continue →
       </button>
     </div>
   );

@@ -191,7 +191,10 @@ export default function BuildIt({
             onClick={next}
             className="rounded-full bg-marigold-500 px-8 py-3 font-display text-white shadow hover:bg-marigold-700"
           >
-            {index + 1 < phrases.length ? "Next →" : "Finish →"}
+            {/* SessionRunner always mounts one phrase at a time -- this is
+             * never actually the last screen of the run, so it always
+             * reads "Continue" rather than guessing what's next. */}
+            Continue →
           </button>
         </div>
       )}

@@ -425,15 +425,29 @@ export type SessionRun = {
  * resumable. At most one active (completed_at is null) run per profile+unit
  * is ever created -- callers should check this before building a new queue. */
 export async function getActiveRun(profileId: string, unitId: string): Promise<SessionRun | null> {
+  // order+limit(1) instead of .maybeSingle() -- a DB-level unique index
+  // (see 20260810130000_add_session_runs.sql) now prevents more than one
+  // incomplete run per profile+unit going forward, but this stays
+  // defensive rather than throwing if a stray duplicate ever exists
+  // (.maybeSingle() errors outright on >1 row, which briefly broke
+  // starting a quest after a StrictMode double-invoke raced two rows into
+  // existence -- caught live, 2026-08-10).
   const { data, error } = await supabase
     .from("session_runs")
     .select("id, profile_id, unit_id, queue, current_index, completed_at")
     .eq("profile_id", profileId)
     .eq("unit_id", unitId)
     .is("completed_at", null)
-    .maybeSingle();
+    // updated_at, not started_at -- if a stray duplicate ever exists, the
+    // one that's actually been played (advanceRun bumps updated_at) is the
+    // one worth resuming, not just whichever row happened to be created
+    // last (caught live: ordering by started_at picked the untouched
+    // duplicate over the one at current_index 4, 2026-08-10).
+    .order("updated_at", { ascending: false })
+    .limit(1);
   if (error) throw error;
-  return data as SessionRun | null;
+  const rows = data as SessionRun[];
+  return rows[0] ?? null;
 }
 
 export async function createRun(

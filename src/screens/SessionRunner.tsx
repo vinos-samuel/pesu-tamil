@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   advanceRun,
   completeRun,
   createRun,
   getActiveRun,
   getSchedulingInfo,
+  type SessionRun,
 } from "../lib/queries";
 import { supabase } from "../lib/supabase";
 import { buildEncounterQueue, type Encounter } from "../lib/scheduler";
@@ -63,27 +64,44 @@ export default function SessionRunner({
 
   const phraseById = useMemo(() => new Map(phrases.map((p) => [p.id, p])), [phrases]);
 
+  // React 18 StrictMode double-invokes this effect in dev specifically to
+  // catch exactly this class of bug: two invocations racing past
+  // getActiveRun() before either createRun() lands, producing two
+  // incomplete rows for the same profile+unit (caught live, 2026-08-10).
+  // A ref that just blocks the second invocation isn't the fix -- in
+  // StrictMode the FIRST invocation is the one that gets torn down
+  // (cancelled=true), so blocking the second one leaves nothing left to
+  // ever call setState and the screen hangs on "Loading..." forever
+  // (caught live too, immediately after the first fix attempt). The
+  // correct pattern: share the *same in-flight promise* across both
+  // invocations, so the DB is only hit once, but whichever invocation
+  // survives still awaits it and sets state.
+  const runPromiseRef = useRef<Promise<SessionRun> | null>(null);
+
   useEffect(() => {
     let cancelled = false;
+
+    async function ensureRun(): Promise<SessionRun> {
+      if (!runPromiseRef.current) {
+        runPromiseRef.current = (async () => {
+          const existing = await getActiveRun(profile.id, unitId);
+          if (existing) return existing;
+          const infos = await getSchedulingInfo(profile.id, phrases);
+          const newQueue = buildEncounterQueue(infos);
+          return createRun(profile.id, unitId, newQueue);
+        })();
+      }
+      return runPromiseRef.current;
+    }
+
     async function load() {
       setLoading(true);
       try {
-        const existing = await getActiveRun(profile.id, unitId);
-        if (existing) {
-          if (!cancelled) {
-            setRunId(existing.id);
-            setQueue(existing.queue);
-            setIndex(existing.current_index);
-          }
-          return;
-        }
-        const infos = await getSchedulingInfo(profile.id, phrases);
-        const newQueue = buildEncounterQueue(infos);
-        const created = await createRun(profile.id, unitId, newQueue);
+        const run = await ensureRun();
         if (!cancelled) {
-          setRunId(created.id);
-          setQueue(created.queue);
-          setIndex(0);
+          setRunId(run.id);
+          setQueue(run.queue);
+          setIndex(run.current_index);
         }
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
@@ -100,13 +118,8 @@ export default function SessionRunner({
 
   async function finalize(finalXp: number, finalCorrect: number, finalTotal: number, finalSayIt: number) {
     if (runId) await completeRun(runId);
-    if (finalXp > 0) {
-      const { error: xpErr } = await supabase
-        .from("profiles")
-        .update({ total_xp: profile.total_xp + finalXp })
-        .eq("id", profile.id);
-      if (xpErr) throw xpErr;
-    }
+    // XP itself is already persisted incrementally (see advance()) -- this
+    // is just reporting the final tally upward, not writing it again.
     onDone(
       { gradedCorrect: finalCorrect, gradedTotal: finalTotal, sayItCount: finalSayIt, xpGained: finalXp },
       { ...profile, total_xp: profile.total_xp + finalXp }
@@ -122,6 +135,20 @@ export default function SessionRunner({
     setGradedCorrect(newCorrect);
     setGradedTotal(newTotal);
     setSayItCount(newSayIt);
+
+    // Written after every encounter, not batched to the end -- a kid who
+    // exits mid-run (or whose tab reloads) keeps whatever XP they already
+    // earned. Batching this to only-on-completion silently lost it (caught
+    // live testing resume, 2026-08-10): the run's local tallies reset on
+    // remount, but nothing had been saved yet for the encounters done
+    // before the exit.
+    if (xpDelta > 0) {
+      const { error: xpErr } = await supabase
+        .from("profiles")
+        .update({ total_xp: profile.total_xp + newXp })
+        .eq("id", profile.id);
+      if (xpErr) throw xpErr;
+    }
 
     const nextIndex = index + 1;
     if (!queue || nextIndex >= queue.length) {
