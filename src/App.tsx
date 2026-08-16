@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
 import { getPhrasesWithCreatures, type UnitWithReadiness } from "./lib/queries";
+import { sessionSummaryCopy } from "./lib/copy";
 import type { PhraseWithCreature, Profile } from "./lib/types";
 import ParentDashboard from "./screens/ParentDashboard";
 import UnitPicker from "./screens/UnitPicker";
@@ -25,6 +26,7 @@ export default function App() {
   const [unitSlug, setUnitSlug] = useState("");
   const [phrases, setPhrases] = useState<PhraseWithCreature[]>([]);
   const [runSummary, setRunSummary] = useState<RunSummary | null>(null);
+  const [encouragement, setEncouragement] = useState("");
 
   async function loadProfiles() {
     setLoading(true);
@@ -77,6 +79,7 @@ export default function App() {
 
   function finishRun(summary: RunSummary, updatedProfile: Profile) {
     setRunSummary(summary);
+    setEncouragement(sessionSummaryCopy(summary.gradedCorrect, summary.gradedTotal));
     setProfile(updatedProfile);
     setScreen("done");
   }
@@ -91,6 +94,15 @@ export default function App() {
   function backToUnits() {
     setScreen("units");
     setRunSummary(null);
+  }
+
+  // "Keep going" from the done screen -- same unit, same loaded phrases,
+  // straight back into a fresh run rather than forcing a detour through
+  // the unit picker. SessionRunner's own setup effect builds a brand-new
+  // queue since the previous run is already marked completed.
+  function keepGoing() {
+    setRunSummary(null);
+    setScreen("run");
   }
 
   // -- Picker --------------------------------------------------------------
@@ -226,6 +238,7 @@ export default function App() {
         <h1 className="font-display text-4xl text-marigold-700">
           Quest complete! 🎉
         </h1>
+        <p className="font-display text-xl text-teal-700">{encouragement}</p>
         <p className="font-body text-gray-600">
           {runSummary.gradedTotal > 0 && (
             <>
@@ -236,12 +249,27 @@ export default function App() {
           {runSummary.sayItCount > 0 && <>{runSummary.sayItCount} said out loud</>}
         </p>
         <p className="font-body text-gray-500">+{runSummary.xpGained} XP</p>
-        <button
-          onClick={backToPicker}
-          className="mt-4 rounded-full bg-teal-500 px-6 py-2 font-display text-white shadow hover:bg-teal-700"
-        >
-          ← Switch player
-        </button>
+
+        <div className="mt-4 flex flex-col items-center gap-3">
+          <button
+            onClick={keepGoing}
+            className="rounded-full bg-marigold-500 px-8 py-3 font-display text-white shadow hover:bg-marigold-700"
+          >
+            Keep going →
+          </button>
+          <button
+            onClick={backToUnits}
+            className="font-body text-sm text-teal-700 underline hover:text-teal-900"
+          >
+            Choose another quest
+          </button>
+          <button
+            onClick={backToPicker}
+            className="font-body text-xs text-gray-400 underline hover:text-gray-600"
+          >
+            ← Switch player
+          </button>
+        </div>
       </div>
     );
   }
