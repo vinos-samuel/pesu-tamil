@@ -547,10 +547,14 @@ export async function createRun(
   return data as SessionRun;
 }
 
-export async function advanceRun(runId: string, nextIndex: number) {
+export async function advanceRun(runId: string, nextIndex: number, queue?: Encounter[]) {
   const { error } = await supabase
     .from("session_runs")
-    .update({ current_index: nextIndex, updated_at: new Date().toISOString() })
+    .update({
+      current_index: nextIndex,
+      ...(queue ? { queue } : {}),
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", runId);
   if (error) throw error;
 }

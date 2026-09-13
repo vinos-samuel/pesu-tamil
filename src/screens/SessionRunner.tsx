@@ -11,6 +11,7 @@ import {
 } from "../lib/queries";
 import { supabase } from "../lib/supabase";
 import { buildEncounterQueue, type Encounter } from "../lib/scheduler";
+import { chooseNextEncounter } from "../lib/tutor";
 import type { PhraseWithCreature, Profile } from "../lib/types";
 import Learn from "./Learn";
 import Recognize from "./Recognize";
@@ -158,7 +159,13 @@ export default function SessionRunner({
     );
   }
 
-  async function advance(xpDelta: number, correctDelta: number, totalDelta: number, sayItDelta: number) {
+  async function advance(
+    xpDelta: number,
+    correctDelta: number,
+    totalDelta: number,
+    sayItDelta: number,
+    previousCorrect: boolean | null = null
+  ) {
     const newXp = xpGained + xpDelta;
     const newCorrect = gradedCorrect + correctDelta;
     const newTotal = gradedTotal + totalDelta;
@@ -186,14 +193,34 @@ export default function SessionRunner({
     if (!queue || nextIndex >= queue.length) {
       await finalize(newXp, newCorrect, newTotal, newSayIt);
     } else {
+      // Re-read the evidence after every encounter. The LLM may choose only
+      // from candidates produced by the deterministic scheduler. This makes
+      // the next step adaptive inside a run while keeping mastery and content
+      // safety outside the model.
+      const infos = await getSchedulingInfo(profile.id, phrases);
+      const current = queue[index];
+      const candidates = buildEncounterQueue(infos, { targetSize: 6, sayItSlots: 1 })
+        .filter((candidate) =>
+          candidate.phraseId !== current.phraseId || candidate.type !== current.type
+        );
+      if (candidates.length === 0) candidates.push(queue[nextIndex]);
+      const nextEncounter = await chooseNextEncounter({
+        previousCorrect,
+        wrongStreak:
+          previousCorrect === false ? wrongStreak + 1 : previousCorrect === true ? 0 : wrongStreak,
+        candidates,
+      });
+      const updatedQueue = [...queue];
+      updatedQueue[nextIndex] = nextEncounter;
+      setQueue(updatedQueue);
       setIndex(nextIndex);
-      if (runId) await advanceRun(runId, nextIndex);
+      if (runId) await advanceRun(runId, nextIndex, updatedQueue);
     }
   }
 
   function handleGraded(correct: boolean) {
     setWrongStreak(correct ? 0 : (w) => w + 1);
-    void advance(correct ? 10 : 0, correct ? 1 : 0, 1, 0);
+    void advance(correct ? 10 : 0, correct ? 1 : 0, 1, 0, correct);
   }
 
   if (loading) {
@@ -233,6 +260,12 @@ export default function SessionRunner({
     total: queue.length,
   };
 
+  const coachLine = encounter.coachLine && (
+    <p className="fixed left-1/2 top-16 z-10 w-[min(90vw,32rem)] -translate-x-1/2 rounded-2xl bg-teal-700 px-4 py-2 text-center font-body text-sm text-white shadow-lg">
+      {encounter.coachLine}
+    </p>
+  );
+
   const heartsRow = wrongStreak > 0 && (
     <p className="absolute right-4 top-4 text-sm">
       {"🤍".repeat(Math.min(wrongStreak, 3))}
@@ -246,6 +279,7 @@ export default function SessionRunner({
     case "learn":
       return (
         <>
+          {coachLine}
           {heartsRow}
           <Learn
             phrases={[phrase]}
@@ -260,6 +294,7 @@ export default function SessionRunner({
     case "recognize":
       return (
         <>
+          {coachLine}
           {heartsRow}
           <Recognize
             target={phrase}
@@ -275,6 +310,7 @@ export default function SessionRunner({
     case "reverse-recognize":
       return (
         <>
+          {coachLine}
           {heartsRow}
           <ReverseRecognize
             target={phrase}
@@ -290,6 +326,7 @@ export default function SessionRunner({
     case "build-it":
       return (
         <>
+          {coachLine}
           {heartsRow}
           <BuildIt
             phrases={[phrase]}
@@ -303,14 +340,17 @@ export default function SessionRunner({
       );
     case "say-it":
       return (
-        <SayIt
-          phrases={[phrase]}
-          profile={profile}
-          unitSlug={unitSlug}
-          onDone={() => void advance(5, 0, 0, 1)}
-          onExit={onExit}
-          progressOverride={progressOverride}
-        />
+        <>
+          {coachLine}
+          <SayIt
+            phrases={[phrase]}
+            profile={profile}
+            unitSlug={unitSlug}
+            onDone={() => void advance(5, 0, 0, 1)}
+            onExit={onExit}
+            progressOverride={progressOverride}
+          />
+        </>
       );
     case "cluster": {
       // clusterDetails is guaranteed non-null here (checked above), and
@@ -322,6 +362,7 @@ export default function SessionRunner({
         .filter((p): p is PhraseWithCreature => !!p);
       return (
         <>
+          {coachLine}
           {heartsRow}
           <Cluster
             situationEn={details.situationEn}

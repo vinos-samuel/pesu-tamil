@@ -15,6 +15,8 @@ export type Encounter = {
   phraseId: string;
   /** Only set for type "cluster" -- which situational_prompts row to use. */
   promptId?: string;
+  /** Optional vetted child-facing bridge selected by the tutor planner. */
+  coachLine?: string;
 };
 
 export type PhraseSchedulingInfo = {
