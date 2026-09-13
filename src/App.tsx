@@ -109,8 +109,11 @@ export default function App() {
   // -- Picker --------------------------------------------------------------
   if (screen === "picker") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-6">
-        <h1 className="font-display text-4xl text-teal-700">Who's playing?</h1>
+      <div className="game-world min-h-screen px-6 py-10">
+        <div className="relative z-10 mx-auto flex max-w-3xl flex-col items-center">
+        <div className="rounded-full bg-white/80 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-teal-700 shadow-sm">Pesu Tamil</div>
+        <h1 className="mt-6 text-center font-display text-5xl text-slate-800">Who is entering<br />the sanctuary?</h1>
+        <p className="mt-2 text-center text-slate-500">Choose your explorer to continue the adventure.</p>
 
         {loading && <p className="text-gray-500">Loading players...</p>}
         {error && (
@@ -120,18 +123,18 @@ export default function App() {
         )}
 
         {!loading && !error && (
-          <div className="flex flex-wrap justify-center gap-6">
+          <div className="mt-8 flex flex-wrap justify-center gap-5">
             {profiles.map((p) => (
               <button
                 key={p.id}
                 onClick={() => selectProfile(p)}
-                className={`flex flex-col items-center gap-2 rounded-3xl px-6 py-5 shadow-md transition hover:-translate-y-1 ${
+                className={`group flex min-w-40 flex-col items-center gap-2 rounded-[2rem] border-2 border-white/80 px-7 py-6 shadow-xl transition hover:-translate-y-1 ${
                   p.avatar_color === "teal"
                     ? "bg-teal-100 hover:bg-teal-300"
                     : "bg-marigold-100 hover:bg-marigold-300"
                 }`}
               >
-                <span className="text-5xl">🧒</span>
+                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-white/70 text-5xl transition group-hover:scale-110">🧒</span>
                 <span className="font-display text-xl text-gray-800">
                   {p.name}
                 </span>
@@ -145,7 +148,7 @@ export default function App() {
 
         <form
           onSubmit={addProfile}
-          className="flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow"
+          className="mt-7 flex items-center gap-2 rounded-full border border-white bg-white/80 px-4 py-2 shadow-lg backdrop-blur"
         >
           <input
             value={newName}
@@ -164,10 +167,11 @@ export default function App() {
 
         <button
           onClick={() => setScreen("parent")}
-          className="mt-2 text-xs text-gray-400 underline hover:text-gray-600"
+          className="mt-8 text-xs font-semibold text-slate-400 hover:text-slate-600"
         >
-          Parent dashboard
+          Parent area →
         </button>
+        </div>
       </div>
     );
   }
