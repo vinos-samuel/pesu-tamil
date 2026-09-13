@@ -66,7 +66,8 @@ Deno.serve(async (request) => {
           },
         ],
         store: false,
-        max_output_tokens: 100,
+        reasoning: { effort: "minimal" },
+        max_output_tokens: 300,
         text: {
           format: {
             type: "json_schema",
