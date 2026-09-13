@@ -3,6 +3,7 @@ import { supabase } from "./lib/supabase";
 import { getPhrasesWithCreatures, type UnitWithReadiness } from "./lib/queries";
 import { sessionSummaryCopy } from "./lib/copy";
 import type { PhraseWithCreature, Profile } from "./lib/types";
+import Creature, { UNIT_HUES } from "./components/Creature";
 import ParentDashboard from "./screens/ParentDashboard";
 import UnitPicker from "./screens/UnitPicker";
 import Sanctuary from "./screens/Sanctuary";
@@ -195,24 +196,29 @@ export default function App() {
 
   // -- Unit intro ------------------------------------------------------------
   if (screen === "intro") {
+    const guide = phrases[0];
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-6 px-6 text-center">
+      <div className="game-world min-h-screen px-6 py-12">
         <button
           onClick={() => setScreen("units")}
-          className="absolute left-4 top-4 text-sm text-gray-400 hover:text-gray-600"
+          className="game-icon-button absolute left-4 top-4"
         >
-          ← Back
+          ←
         </button>
-        <h1 className="font-display text-4xl text-teal-700">{unitTitle}</h1>
-        <p className="font-body text-gray-600">
-          Your crew is waiting, {profile?.name}!
-        </p>
-        <button
-          onClick={() => setScreen("run")}
-          className="rounded-full bg-marigold-500 px-8 py-3 font-display text-white shadow hover:bg-marigold-700"
-        >
-          Start →
-        </button>
+        <div className="relative z-10 mx-auto mt-12 max-w-lg overflow-hidden rounded-[2.25rem] border-2 border-white/80 bg-white/80 p-7 text-center shadow-2xl backdrop-blur">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-700">New mission</p>
+          <div className="creature-float mx-auto mt-4 flex h-44 w-44 items-center justify-center rounded-full bg-gradient-to-br from-amber-100 to-teal-100">
+            {guide && <Creature slug={guide.slug} hueBase={UNIT_HUES[unitSlug] ?? 178} size={120} />}
+          </div>
+          <h1 className="mt-5 font-display text-4xl text-slate-800">{unitTitle}</h1>
+          <p className="mx-auto mt-2 max-w-sm text-slate-600">Your crew is hiding nearby. Use spoken Tamil to find them and bring them home.</p>
+          <div className="mt-5 grid grid-cols-3 gap-2 text-xs font-semibold text-slate-600">
+            <span className="rounded-2xl bg-teal-50 px-2 py-3">🎧 Listen</span>
+            <span className="rounded-2xl bg-amber-50 px-2 py-3">🧩 Solve</span>
+            <span className="rounded-2xl bg-pink-50 px-2 py-3">🎙️ Speak</span>
+          </div>
+          <button onClick={() => setScreen("run")} className="game-primary mt-6 w-full bg-teal-700 py-4 text-white hover:bg-teal-800">Enter habitat →</button>
+        </div>
       </div>
     );
   }
@@ -233,42 +239,39 @@ export default function App() {
 
   // -- Done ----------------------------------------------------------------
   if (screen === "done" && runSummary) {
+    const learnedPhrases = runSummary.phraseIds
+      .map((id) => phrases.find((phrase) => phrase.id === id))
+      .filter((phrase): phrase is PhraseWithCreature => !!phrase)
+      .slice(0, 3);
+    const featuredTip = learnedPhrases.find((phrase) => phrase.tip)?.tip;
+    const accuracy = runSummary.gradedTotal
+      ? Math.round((runSummary.gradedCorrect / runSummary.gradedTotal) * 100)
+      : 100;
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center">
-        <h1 className="font-display text-4xl text-marigold-700">
-          Quest complete! 🎉
-        </h1>
-        <p className="font-display text-xl text-teal-700">{encouragement}</p>
-        <p className="font-body text-gray-600">
-          {runSummary.gradedTotal > 0 && (
-            <>
-              {runSummary.gradedCorrect} / {runSummary.gradedTotal} correct
-            </>
-          )}
-          {runSummary.gradedTotal > 0 && runSummary.sayItCount > 0 && " · "}
-          {runSummary.sayItCount > 0 && <>{runSummary.sayItCount} said out loud</>}
-        </p>
-        <p className="font-body text-gray-500">+{runSummary.xpGained} XP</p>
+      <div className="game-world min-h-screen px-5 py-8">
+        <div className="relative z-10 mx-auto max-w-xl">
+          <section className="overflow-hidden rounded-[2rem] border-2 border-white bg-white/85 p-6 text-center shadow-2xl backdrop-blur">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-amber-300 text-4xl shadow-lg">🏆</div>
+            <p className="mt-4 text-xs font-bold uppercase tracking-[0.2em] text-amber-700">Mission complete</p>
+            <h1 className="font-display text-4xl text-slate-800">{encouragement}</h1>
+            <p className="mt-2 text-sm text-slate-500">Your Tamil crew grew stronger.</p>
 
-        <div className="mt-4 flex flex-col items-center gap-3">
-          <button
-            onClick={keepGoing}
-            className="rounded-full bg-marigold-500 px-8 py-3 font-display text-white shadow hover:bg-marigold-700"
-          >
-            Keep going →
-          </button>
-          <button
-            onClick={backToUnits}
-            className="font-body text-sm text-teal-700 underline hover:text-teal-900"
-          >
-            Choose another quest
-          </button>
-          <button
-            onClick={backToPicker}
-            className="font-body text-xs text-gray-400 underline hover:text-gray-600"
-          >
-            ← Switch player
-          </button>
+            <div className="mt-5 grid grid-cols-3 gap-2">
+              <div className="game-panel bg-amber-50"><span className="text-2xl">⚡</span><strong>+{runSummary.xpGained}</strong><small>energy</small></div>
+              <div className="game-panel bg-teal-50"><span className="text-2xl">🎯</span><strong>{accuracy}%</strong><small>accuracy</small></div>
+              <div className="game-panel bg-pink-50"><span className="text-2xl">🎙️</span><strong>{runSummary.sayItCount}</strong><small>spoken</small></div>
+            </div>
+
+            {learnedPhrases.length > 0 && <div className="mt-6 text-left"><h2 className="font-display text-xl text-slate-800">Words you powered up</h2><div className="mt-2 flex flex-wrap gap-2">{learnedPhrases.map((phrase) => <span key={phrase.id} className="rounded-full bg-teal-100 px-3 py-2 text-sm font-semibold text-teal-900">{phrase.tamil_romanized} · {phrase.english}</span>)}</div></div>}
+
+            {featuredTip && <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left"><p className="text-xs font-bold uppercase tracking-wide text-amber-700">Creature clue</p><h3 className="mt-1 font-display text-lg text-slate-800">{featuredTip.title}</h3><p className="mt-1 text-sm leading-relaxed text-slate-600">{featuredTip.body}</p></div>}
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <button onClick={keepGoing} className="game-primary bg-amber-400 py-4 text-amber-950 hover:bg-amber-300">Keep exploring →</button>
+              <button onClick={backToUnits} className="game-primary bg-teal-700 py-4 text-white hover:bg-teal-800">Return to sanctuary</button>
+            </div>
+            <button onClick={backToPicker} className="mt-5 text-xs font-semibold text-slate-400 hover:text-slate-600">Finish for now</button>
+          </section>
         </div>
       </div>
     );

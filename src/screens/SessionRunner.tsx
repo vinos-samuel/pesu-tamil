@@ -25,6 +25,7 @@ export type RunSummary = {
   gradedTotal: number;
   sayItCount: number;
   xpGained: number;
+  phraseIds: string[];
 };
 
 const ENCOUNTER_LABELS: Record<Encounter["type"], string> = {
@@ -68,6 +69,7 @@ export default function SessionRunner({
   const [wrongStreak, setWrongStreak] = useState(0); // run-level "hearts", not per-encounter
   const [clusterDetails, setClusterDetails] = useState<ClusterPromptDetails | null>(null);
   const [clusterLoading, setClusterLoading] = useState(false);
+  const encounteredPhraseIds = useRef(new Set<string>());
 
   const phraseById = useMemo(() => new Map(phrases.map((p) => [p.id, p])), [phrases]);
   const currentPromptId = queue?.[index]?.type === "cluster" ? queue[index].promptId : undefined;
@@ -154,7 +156,13 @@ export default function SessionRunner({
     // XP itself is already persisted incrementally (see advance()) -- this
     // is just reporting the final tally upward, not writing it again.
     onDone(
-      { gradedCorrect: finalCorrect, gradedTotal: finalTotal, sayItCount: finalSayIt, xpGained: finalXp },
+      {
+        gradedCorrect: finalCorrect,
+        gradedTotal: finalTotal,
+        sayItCount: finalSayIt,
+        xpGained: finalXp,
+        phraseIds: [...encounteredPhraseIds.current],
+      },
       { ...profile, total_xp: profile.total_xp + finalXp }
     );
   }
@@ -170,6 +178,8 @@ export default function SessionRunner({
     const newCorrect = gradedCorrect + correctDelta;
     const newTotal = gradedTotal + totalDelta;
     const newSayIt = sayItCount + sayItDelta;
+    const completedEncounter = queue?.[index];
+    if (completedEncounter) encounteredPhraseIds.current.add(completedEncounter.phraseId);
     setXpGained(newXp);
     setGradedCorrect(newCorrect);
     setGradedTotal(newTotal);
