@@ -4,6 +4,7 @@ import { playAudio } from "../lib/playAudio";
 import Creature, { UNIT_HUES } from "../components/Creature";
 import QuestProgress from "../components/QuestProgress";
 import { parseWordGloss, type PhraseWithCreature, type Profile } from "../lib/types";
+import { chooseWordChallenge, type WordChallenge } from "../lib/contentTutor";
 
 export default function Learn({
   phrases,
@@ -27,11 +28,25 @@ export default function Learn({
   const [playError, setPlayError] = useState(false);
   const [showTip, setShowTip] = useState(false);
   const [showWordMap, setShowWordMap] = useState(false);
-  const [twistPick, setTwistPick] = useState<string | null>(null);
+  const [challenge, setChallenge] = useState<WordChallenge | null>(null);
+  const [challengeLoading, setChallengeLoading] = useState(false);
+  const [twistPick, setTwistPick] = useState<number | null>(null);
   const phrase = phrases[index];
   const hueBase = UNIT_HUES[unitSlug] ?? 178;
   const wordMap = parseWordGloss(phrase.word_gloss);
-  const twistWord = wordMap[0];
+  const twistWord = challenge ? wordMap[challenge.targetIndex] : null;
+
+  async function exploreWords() {
+    setShowWordMap(true);
+    setChallengeLoading(true);
+    const nextChallenge = await chooseWordChallenge({
+      phraseEnglish: phrase.english,
+      tamilRomanized: phrase.tamil_romanized,
+      words: wordMap,
+    });
+    setChallenge(nextChallenge);
+    setChallengeLoading(false);
+  }
 
   function play() {
     if (!phrase.audio_path) return;
@@ -52,6 +67,8 @@ export default function Learn({
       setPlayError(false);
       setShowTip(false);
       setShowWordMap(false);
+      setChallenge(null);
+      setChallengeLoading(false);
       setTwistPick(null);
     } else {
       onDone();
@@ -99,8 +116,8 @@ export default function Learn({
           <div className="mt-2 max-w-sm rounded-2xl bg-amber-50 p-3 text-left"><p className="text-xs font-bold text-amber-700">💡 {phrase.tip.title}</p><p className="mt-1 text-xs leading-relaxed text-slate-600">{phrase.tip.body}</p></div>
         )}
 
-        {revealed && wordMap.length >= 2 && !showWordMap && <button onClick={() => setShowWordMap(true)} className="mt-2 rounded-full bg-violet-100 px-4 py-2 text-xs font-bold text-violet-800 hover:bg-violet-200">✨ Explore the words</button>}
-        {revealed && showWordMap && <div className="mt-3 w-full rounded-2xl bg-violet-50 p-4 text-left"><p className="text-xs font-bold uppercase tracking-wide text-violet-700">Word powers</p><div className="mt-2 flex flex-wrap gap-2">{wordMap.map((word) => <span key={word.tamil} className="rounded-xl bg-white px-3 py-2 text-sm shadow-sm"><strong className="text-violet-800">{word.tamil}</strong> <span className="text-slate-400">=</span> {word.english}</span>)}</div>{twistWord && twistPick === null && <div className="mt-4"><p className="text-sm font-semibold text-slate-700">Quick twist: which word means “{twistWord.english}”?</p><div className="mt-2 flex flex-wrap gap-2">{wordMap.map((word) => <button key={word.tamil} onClick={() => setTwistPick(word.tamil)} className="rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm font-bold text-violet-800 hover:bg-violet-100">{word.tamil}</button>)}</div></div>}{twistPick && <p className={`mt-3 rounded-xl px-3 py-2 text-sm font-bold ${twistPick === twistWord?.tamil ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>{twistPick === twistWord?.tamil ? "Yes! You found the word power. ✨" : `Good try. “${twistWord?.english}” is ${twistWord?.tamil}.`}</p>}</div>}
+        {revealed && wordMap.length >= 2 && !showWordMap && <button onClick={() => void exploreWords()} className="mt-2 rounded-full bg-violet-100 px-4 py-2 text-xs font-bold text-violet-800 hover:bg-violet-200">✨ Explore the words</button>}
+        {revealed && showWordMap && <div className="mt-3 w-full rounded-2xl bg-violet-50 p-4 text-left"><p className="text-xs font-bold uppercase tracking-wide text-violet-700">Word powers</p><div className="mt-2 flex flex-wrap gap-2">{wordMap.map((word) => <span key={word.tamil} className="rounded-xl bg-white px-3 py-2 text-sm shadow-sm"><strong className="text-violet-800">{word.tamil}</strong> <span className="text-slate-400">=</span> {word.english}</span>)}</div>{challengeLoading && <p className="mt-4 text-sm font-semibold text-violet-600">Your guide is making a twist...</p>}{twistWord && challenge && twistPick === null && <div className="mt-4"><p className="text-sm font-semibold text-slate-700">{challenge.kind === "tamil-from-english" ? `Which word means “${twistWord.english}”?` : challenge.kind === "english-from-tamil" ? `What does “${twistWord.tamil}” mean?` : `Which word completes this phrase: ${wordMap.map((word, wordIndex) => wordIndex === challenge.targetIndex ? "___" : word.tamil).join(" ")}?`}</p><div className="mt-2 flex flex-wrap gap-2">{wordMap.map((word, wordIndex) => <button key={word.tamil} onClick={() => setTwistPick(wordIndex)} className="rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm font-bold text-violet-800 hover:bg-violet-100">{challenge.kind === "english-from-tamil" ? word.english : word.tamil}</button>)}</div></div>}{twistPick !== null && twistWord && challenge && <p className={`mt-3 rounded-xl px-3 py-2 text-sm font-bold ${twistPick === challenge.targetIndex ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>{twistPick === challenge.targetIndex ? "Yes! You found the word power. ✨" : `Good try. The answer is ${challenge.kind === "english-from-tamil" ? twistWord.english : twistWord.tamil}.`}</p>}</div>}
       </div>
 
       <button
